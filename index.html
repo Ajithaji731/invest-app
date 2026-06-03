@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WealthFlow | Premium Portfolio Tracker & Investment Analytics</title>
+  <meta name="description" content="Track and analyze your investments in stocks, mutual funds, EPF, PPF, and NPS. Compare month-on-month differences, gains, and asset allocations.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Mobile Header -->
+    <div class="mobile-header" id="mobileHeader">
+      <div class="brand">
+        <i class="fa-solid fa-chart-line"></i>
+        <h1>WealthFlow</h1>
+      </div>
+      <button class="menu-toggle" id="menuToggleBtn">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <i class="fa-solid fa-chart-line"></i>
+        <h1>WealthFlow</h1>
+      </div>
+      
+      <nav class="nav-menu">
+        <div class="nav-item active" data-view="dashboard" id="nav-dashboard">
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-view="investments" id="nav-investments">
+          <i class="fa-solid fa-wallet"></i>
+          <span>Asset List</span>
+        </div>
+        <div class="nav-item" data-view="monthly-records" id="nav-monthly-records">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>Monthly Updates</span>
+        </div>
+        <div class="nav-item" data-view="analysis" id="nav-analysis">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Performance Analysis</span>
+        </div>
+        <div class="nav-item" data-view="settings" id="nav-settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Data & Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>WealthFlow Portfolio v1.0</p>
+        <p style="margin-top: 4px;">Local Storage Active</p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      
+      <!-- Top Title Header -->
+      <header class="top-header">
+        <div class="header-title">
+          <h2 id="viewTitle">Dashboard</h2>
+        </div>
+        
+        <div class="header-actions">
+          <div class="month-selector-wrapper" id="globalMonthWrapper">
+            <i class="fa-solid fa-calendar"></i>
+            <select class="month-select" id="globalMonthSelect" title="Select Portfolio Month">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <button class="btn btn-primary" id="quickAddRecordBtn">
+            <i class="fa-solid fa-plus"></i>
+            <span>Monthly Update</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- 1. DASHBOARD VIEW -->
+      <section class="view-section active" id="view-dashboard">
+        
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+          
+          <div class="kpi-card" style="--card-accent: var(--primary);">
+            <div class="kpi-header">
+              <span class="kpi-title">Net Worth</span>
+              <div class="kpi-icon"><i class="fa-solid fa-coins"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-net-worth">₹0.00</div>
+            <div class="kpi-footer" id="kpi-net-worth-change">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--card-accent: var(--text-secondary);">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Invested</span>
+              <div class="kpi-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-invested">₹0.00</div>
+            <div class="kpi-footer" id="kpi-invested-change">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--card-accent: var(--success);">
+            <div class="kpi-header">
+              <span class="kpi-title">Absolute Profit</span>
+              <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-profit">₹0.00</div>
+            <div class="kpi-footer" id="kpi-profit-percent">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--card-accent: var(--warning);">
+            <div class="kpi-header">
+              <span class="kpi-title">MoM Return</span>
+              <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-mom-gain">₹0.00</div>
+            <div class="kpi-footer" id="kpi-mom-percent">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Month Difference Analysis Banner -->
+        <div class="diff-banner" id="dashboardDiffBanner">
+          <div class="diff-banner-text">
+            <span class="diff-banner-title" id="diffBannerTitle">Monthly Difference (Month vs Previous)</span>
+            <span class="diff-banner-desc" id="diffBannerDesc">Net Change = New Investments + Market Returns</span>
+          </div>
+          <div class="diff-banner-value" id="diffBannerValue">
+            ₹0.00
+          </div>
+        </div>
+
+        <!-- Visual Analytics Grid -->
+        <div class="charts-grid">
+          
+          <div class="chart-card">
+            <div class="chart-card-title">
+              <h3>Net Worth Trend</h3>
+              <span class="text-muted" style="font-size: 12px;">Invested vs. Valuation</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="netWorthTrendChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title">
+              <h3>Asset Allocation</h3>
+              <span class="text-muted" style="font-size: 12px;">Current Valuation</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="allocationChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Category Contribution list -->
+        <div class="table-card">
+          <div class="table-header-row">
+            <h3>Asset Class Breakdown</h3>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="categoryBreakdownTable">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount Invested</th>
+                  <th>Current Value</th>
+                  <th>Absolute Gain</th>
+                  <th>Return (%)</th>
+                  <th>Share (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 2. INVESTMENTS (ASSETS) VIEW -->
+      <section class="view-section" id="view-investments">
+        
+        <div class="table-card">
+          <div class="table-header-row">
+            <h3>Investment Assets</h3>
+            <button class="btn btn-primary" id="openAddAssetModalBtn">
+              <i class="fa-solid fa-plus"></i> Add Asset
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="assetsTable">
+              <thead>
+                <tr>
+                  <th>Asset Name</th>
+                  <th>Category</th>
+                  <th>Sector / Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. MONTHLY RECORDS VIEW -->
+      <section class="view-section" id="view-monthly-records">
+        
+        <div class="table-card" style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 18px;">Update Valuations</h3>
+              <p class="text-secondary" style="font-size: 13px; margin-top: 4px;">Update values for each month. We'll compare them with prior records.</p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn" id="fetchLiveNavsBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: white;" title="Fetch current Mutual Fund NAVs from AMFI API">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Fetch Live MFs NAVs
+              </button>
+              <button class="btn" id="clonePreviousMonthBtn" title="Pre-fill values from the previous available month">
+                <i class="fa-solid fa-copy"></i> Auto-Fill Prev Month
+              </button>
+              <button class="btn btn-danger" id="deleteMonthBtn">
+                <i class="fa-solid fa-trash-can"></i> Delete Month
+              </button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--border-radius-md); flex-wrap: wrap;">
+            <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 12px;">
+              <label for="recordMonthInput" class="form-label" style="margin-bottom: 0; white-space: nowrap;">Selected Month:</label>
+              <input type="month" class="form-input" id="recordMonthInput" style="padding: 8px 12px; width: 180px;">
+            </div>
+            <div id="monthStatusBadgeContainer" style="display: flex; align-items: center;">
+              <!-- Dynamically populated status badge -->
+            </div>
+          </div>
+
+          <!-- Spreadsheet-style valuation updates -->
+          <form id="monthlyRecordsForm">
+            <div class="records-form-grid" id="recordsFormContainer">
+              <!-- Dynamically populated rows -->
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+              <button type="submit" class="btn btn-primary" id="saveRecordsBtn">
+                <i class="fa-solid fa-floppy-disk"></i> Save Monthly Update
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- 4. ANALYSIS VIEW -->
+      <section class="view-section" id="view-analysis">
+        
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--card-accent: var(--success);">
+            <div class="kpi-header">
+              <span class="kpi-title">Top Performing Asset</span>
+              <div class="kpi-icon"><i class="fa-solid fa-crown"></i></div>
+            </div>
+            <div class="kpi-value" id="analysis-top-asset" style="font-size: 20px;">-</div>
+            <div class="kpi-footer" id="analysis-top-asset-pct">
+              -
+            </div>
+          </div>
+          
+          <div class="kpi-card" style="--card-accent: var(--primary);">
+            <div class="kpi-header">
+              <span class="kpi-title">Average Monthly Investment</span>
+              <div class="kpi-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+            </div>
+            <div class="kpi-value" id="analysis-avg-investment">₹0.00</div>
+            <div class="kpi-footer">
+              Across all tracked months
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--card-accent: var(--color-mfs);">
+            <div class="kpi-header">
+              <span class="kpi-title">Best Asset Class (Total Returns)</span>
+              <div class="kpi-icon"><i class="fa-solid fa-trophy"></i></div>
+            </div>
+            <div class="kpi-value" id="analysis-best-class">-</div>
+            <div class="kpi-footer" id="analysis-best-class-pct">
+              -
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header-row">
+            <h3>Asset Performance details for <span id="analysisMonthName">Selected Month</span></h3>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table" id="assetPerformanceTable">
+              <thead>
+                <tr>
+                  <th>Asset Name</th>
+                  <th>Category</th>
+                  <th>Units</th>
+                  <th>Amount Invested</th>
+                  <th>Current Value</th>
+                  <th>Total Return</th>
+                  <th>Total Return (%)</th>
+                  <th>MoM Contribution</th>
+                  <th>MoM Value Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 5. SETTINGS & DATA VIEW -->
+      <section class="view-section" id="view-settings">
+        
+        <div class="settings-grid">
+          
+          <div class="settings-card">
+            <h3><i class="fa-solid fa-download"></i> Export Portfolio Data</h3>
+            <p>Back up all your custom assets, historical records, and allocations to a local JSON file. Keep it safe in case you clear browser cookies.</p>
+            <textarea id="exportTextarea" readonly title="Export Data JSON Output"></textarea>
+            <div style="display: flex; gap: 12px; margin-top: auto;">
+              <button class="btn" id="copyJsonBtn"><i class="fa-solid fa-copy"></i> Copy JSON</button>
+              <button class="btn btn-primary" id="downloadFileBtn"><i class="fa-solid fa-file-arrow-down"></i> Save File</button>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3><i class="fa-solid fa-upload"></i> Import Portfolio Data</h3>
+            <p>Upload a backup file or paste the JSON text content directly below to restore your investment portfolio.</p>
+            <textarea id="importTextarea" placeholder="Paste backup JSON content here..." title="Import Data JSON Input"></textarea>
+            <div style="display: flex; gap: 12px; margin-top: auto;">
+              <button class="btn" style="position: relative; overflow: hidden;">
+                <i class="fa-solid fa-file-import"></i> Upload JSON
+                <input type="file" id="importFile" accept=".json" style="position: absolute; opacity: 0; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer;" title="Select JSON backup file">
+              </button>
+              <button class="btn btn-primary" id="importJsonBtn"><i class="fa-solid fa-check"></i> Restore Portfolio</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="settings-card" style="border-color: rgba(239, 68, 68, 0.3); background-color: rgba(239, 68, 68, 0.02);">
+          <h3 style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h3>
+          <p>Careful! Resetting or clearing data will overwrite any manual updates you have made.</p>
+          <div style="display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;">
+            <button class="btn" id="resetDemoBtn" style="border-color: var(--warning); color: var(--warning);">
+              <i class="fa-solid fa-rotate-left"></i> Reset to Excel Preloaded Data
+            </button>
+            <button class="btn btn-danger" id="clearAllDataBtn">
+              <i class="fa-solid fa-trash-can"></i> Clear All Data (Blank Slate)
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ADD ASSET MODAL -->
+  <div class="modal-overlay" id="addAssetModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Add New Investment Asset</h3>
+        <button class="modal-close" data-close="addAssetModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="addAssetForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="assetNameInput" class="form-label">Asset Name</label>
+            <input type="text" class="form-input" id="assetNameInput" required placeholder="e.g., Apple Inc. or SBI Small Cap Fund">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="assetCategorySelect" class="form-label">Category</label>
+              <select class="form-select" id="assetCategorySelect" required>
+                <option value="Stocks/ETFs">Stocks/ETFs</option>
+                <option value="Mutual Funds">Mutual Funds</option>
+                <option value="EPF">EPF (PF Balance)</option>
+                <option value="PPF">PPF Balance</option>
+                <option value="NPS">NPS</option>
+                <option value="Goals">Goals</option>
+                <option value="Emergency Fund">Emergency Fund</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="assetSectorInput" class="form-label">Sector / Type</label>
+              <input type="text" class="form-input" id="assetSectorInput" placeholder="e.g., Technology or Flexi Cap">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="assetSchemeCodeInput" class="form-label">MF Scheme Code (Optional, for Live Price Fetch)</label>
+            <input type="text" class="form-input" id="assetSchemeCodeInput" placeholder="e.g. 122639 for Parag Parikh Direct">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" data-close="addAssetModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Asset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- EDIT ASSET MODAL -->
+  <div class="modal-overlay" id="editAssetModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Edit Asset Info</h3>
+        <button class="modal-close" data-close="editAssetModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="editAssetForm">
+        <input type="hidden" id="editAssetId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editAssetNameInput" class="form-label">Asset Name</label>
+            <input type="text" class="form-input" id="editAssetNameInput" required>
+          </div>
+          <div class="form-group">
+            <label for="editAssetSectorInput" class="form-label">Sector / Type</label>
+            <input type="text" class="form-input" id="editAssetSectorInput">
+          </div>
+          <div class="form-group">
+            <label for="editAssetSchemeCodeInput" class="form-label">MF Scheme Code (Optional, for Live Price Fetch)</label>
+            <input type="text" class="form-input" id="editAssetSchemeCodeInput" placeholder="e.g. 122639">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" data-close="editAssetModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main scripts -->
+  <script src="js/state.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
