@@ -5,9 +5,26 @@
 
 const STORAGE_KEY = 'portfolio_tracker_state';
 
-// JSONBin.io Configuration
-const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/6a22f0f4da38895dfe8d1ba9';
-const JSONBIN_KEY = '$2a$10$JkFZS2xryyq8qtKe8a8WMOU3ga/ZP178PiBSeRIz1UPYi02hBeK6S';
+// Cloud Configuration Keys
+const GIST_ID_KEY = 'portfolio_tracker_gist_id';
+const GIST_TOKEN_KEY = 'portfolio_tracker_gist_token';
+
+function getCloudConfig() {
+  return {
+    gistId: localStorage.getItem(GIST_ID_KEY),
+    token: localStorage.getItem(GIST_TOKEN_KEY)
+  };
+}
+
+function saveCloudConfig(gistId, token) {
+  if (gistId) localStorage.setItem(GIST_ID_KEY, gistId.trim());
+  if (token) localStorage.setItem(GIST_TOKEN_KEY, token.trim());
+}
+
+function hasCloudConfig() {
+  const c = getCloudConfig();
+  return !!(c.gistId && c.token);
+}
 
 // Preloaded user assets from the provided Excel sheet
 const DEFAULT_ASSETS = [
@@ -173,14 +190,28 @@ async function syncToCloud() {
   isSaving = true;
   pendingSave = false;
   
+  const config = getCloudConfig();
+  if (!config.gistId || !config.token) {
+    isSaving = false;
+    return; // Cannot sync without config
+  }
+
   try {
-    const res = await fetch(JSONBIN_URL, {
-      method: 'PUT',
+    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+      method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_KEY
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${config.token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(state)
+      body: JSON.stringify({
+        files: {
+          'portfolio.json': {
+            content: JSON.stringify(state)
+          }
+        }
+      })
     });
     if (!res.ok) console.error("Cloud sync failed with status", res.status);
   } catch (e) {
@@ -239,37 +270,35 @@ function cleanRecords() {
  * Load state from cloud (fallback to localStorage)
  */
 async function loadState() {
+  const config = getCloudConfig();
+  if (!config.gistId || !config.token) {
+    console.log("No cloud config found, loading from local storage.");
+    return loadLocalFallback();
+  }
+
   try {
-    const res = await fetch(JSONBIN_URL, {
+    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
       headers: {
-        'X-Master-Key': JSONBIN_KEY
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${config.token}`,
+        'X-GitHub-Api-Version': '2022-11-28'
       }
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.record && data.record.assets) {
-        state = data.record;
+      const file = data.files['portfolio.json'];
+      if (file && file.content) {
+        state = JSON.parse(file.content);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // update local backup
       } else {
-        throw new Error("Invalid cloud data format");
+        throw new Error("Invalid cloud data format: missing portfolio.json");
       }
     } else {
       throw new Error(`Cloud fetch failed with status ${res.status}`);
     }
   } catch (e) {
     console.error("Cloud load failed, falling back to local storage.", e);
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      try {
-        state = JSON.parse(data);
-      } catch (err) {
-        state = getDefaultState();
-        saveState();
-      }
-    } else {
-      state = getDefaultState();
-      saveState();
-    }
+    loadLocalFallback();
   }
 
   // Run cleanup/migrations on loaded state
@@ -282,6 +311,22 @@ async function loadState() {
     cleanRecords();
   }
   
+  return state;
+}
+
+function loadLocalFallback() {
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (data) {
+    try {
+      state = JSON.parse(data);
+    } catch (err) {
+      state = getDefaultState();
+      saveState();
+    }
+  } else {
+    state = getDefaultState();
+    saveState();
+  }
   return state;
 }
 
@@ -593,6 +638,10 @@ function resetData() {
 
 // Expose state API globally
 window.portfolioState = {
+  getCloudConfig,
+  saveCloudConfig,
+  hasCloudConfig,
+  saveState,
   loadState,
   getAssets,
   addAsset,

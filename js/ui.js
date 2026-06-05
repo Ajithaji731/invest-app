@@ -799,6 +799,13 @@ function renderAnalysis() {
 function renderSettings() {
   elements.exportTextarea.value = portfolioState.exportData();
   elements.importTextarea.value = '';
+
+  // Render Cloud Sync Settings if they exist
+  const cloudConfig = portfolioState.getCloudConfig();
+  const gistIdInput = document.getElementById('gistIdInput');
+  const tokenInput = document.getElementById('githubTokenInput');
+  if (gistIdInput) gistIdInput.value = cloudConfig.gistId || '';
+  if (tokenInput) tokenInput.value = cloudConfig.token || '';
 }
 
 /**
@@ -1113,6 +1120,30 @@ function setupEventListeners() {
     alert(`Portfolio valuations for ${formatMonthName(recordEditMonth)} saved successfully!`);
     switchView('dashboard');
   });
+
+  const cloudSyncForm = document.getElementById('cloudSyncForm');
+  if (cloudSyncForm) {
+    cloudSyncForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const gistId = document.getElementById('gistIdInput').value.trim();
+      const token = document.getElementById('githubTokenInput').value.trim();
+      const statusSpan = document.getElementById('cloudSyncStatus');
+      
+      portfolioState.saveCloudConfig(gistId, token);
+      
+      statusSpan.style.color = 'var(--text-secondary)';
+      statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+      
+      // Trigger a sync
+      portfolioState.saveState();
+      
+      setTimeout(() => {
+        statusSpan.style.color = 'var(--success)';
+        statusSpan.innerHTML = '<i class="fa-solid fa-check"></i> Connected & Saved';
+        setTimeout(() => { statusSpan.innerHTML = ''; }, 3000);
+      }, 1000);
+    });
+  }
 
   elements.copyJsonBtn.addEventListener('click', () => {
     elements.exportTextarea.select();
