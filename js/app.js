@@ -4,10 +4,17 @@
  */
 
 // Launch application once DOM structure is ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Load local state (seed with defaults if empty)
-  portfolioState.loadState();
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show loading overlay
+  const loader = document.getElementById('cloudLoader');
+  if (loader) loader.style.display = 'flex';
+
+  // Load cloud state
+  await portfolioState.loadState();
   
+  // Hide loading overlay
+  if (loader) loader.style.display = 'none';
+
   // Bind handlers and render primary dashboard view
   portfolioUI.initUI();
 });

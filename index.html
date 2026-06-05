@@ -12,6 +12,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <!-- Cloud Loading Overlay -->
+  <div id="cloudLoader" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(4px);">
+    <i class="fa-solid fa-cloud-arrow-down fa-bounce" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+    <h3 style="font-family: var(--font-heading); margin: 0 0 8px 0;">Syncing with JSONBin...</h3>
+    <p style="color: var(--text-secondary); margin: 0;">Loading your portfolio data from the cloud</p>
+  </div>
 
   <div class="app-container">
     
@@ -57,8 +63,8 @@
       </nav>
 
       <div class="sidebar-footer">
-        <p>WealthFlow Portfolio v1.0</p>
-        <p style="margin-top: 4px;">Local Storage Active</p>
+        <p>WealthFlow Portfolio v1.1 cloud</p>
+        <p style="margin-top: 4px;">Cloud Sync Active</p>
       </div>
     </aside>
 

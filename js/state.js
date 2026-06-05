@@ -5,6 +5,10 @@
 
 const STORAGE_KEY = 'portfolio_tracker_state';
 
+// JSONBin.io Configuration
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/6a22f0f4da38895dfe8d1ba9';
+const JSONBIN_KEY = '$2a$10$JkFZS2xryyq8qtKe8a8WMOU3ga/ZP178PiBSeRIz1UPYi02hBeK6S';
+
 // Preloaded user assets from the provided Excel sheet
 const DEFAULT_ASSETS = [
   // Stocks & ETFs
@@ -158,11 +162,43 @@ let state = {
   records: {}
 };
 
+let isSaving = false;
+let pendingSave = false;
+
+async function syncToCloud() {
+  if (isSaving) {
+    pendingSave = true;
+    return;
+  }
+  isSaving = true;
+  pendingSave = false;
+  
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY
+      },
+      body: JSON.stringify(state)
+    });
+    if (!res.ok) console.error("Cloud sync failed with status", res.status);
+  } catch (e) {
+    console.error("Failed to sync to cloud", e);
+  } finally {
+    isSaving = false;
+    if (pendingSave) {
+      syncToCloud();
+    }
+  }
+}
+
 /**
- * Save current state to localStorage
+ * Save current state to localStorage and cloud
  */
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  syncToCloud(); // fire and forget to avoid blocking UI
 }
 
 /**
@@ -200,33 +236,52 @@ function cleanRecords() {
 }
 
 /**
- * Load state from localStorage or seed with defaults
+ * Load state from cloud (fallback to localStorage)
  */
-function loadState() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (data) {
-    try {
-      state = JSON.parse(data);
-      // Migration: Check if goal_emergency_fund exists and has category 'Emergency Fund'
-      const hasEmergencyFund = state.assets.some(a => a.id === 'goal_emergency_fund' && a.category === 'Emergency Fund');
-      if (!hasEmergencyFund) {
-        console.log("Migrating older state to include separate Emergency Fund category.");
+async function loadState() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {
+        'X-Master-Key': JSONBIN_KEY
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.record && data.record.assets) {
+        state = data.record;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // update local backup
+      } else {
+        throw new Error("Invalid cloud data format");
+      }
+    } else {
+      throw new Error(`Cloud fetch failed with status ${res.status}`);
+    }
+  } catch (e) {
+    console.error("Cloud load failed, falling back to local storage.", e);
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      try {
+        state = JSON.parse(data);
+      } catch (err) {
         state = getDefaultState();
         saveState();
-      } else {
-        // Clean any empty initialized months
-        cleanRecords();
       }
-    } catch (e) {
-      console.error("Failed to parse stored state, reverting to defaults.", e);
+    } else {
       state = getDefaultState();
       saveState();
     }
-  } else {
-    // Seed with preloaded data
+  }
+
+  // Run cleanup/migrations on loaded state
+  const hasEmergencyFund = state.assets.some(a => a.id === 'goal_emergency_fund' && a.category === 'Emergency Fund');
+  if (!hasEmergencyFund) {
+    console.log("Migrating older state to include separate Emergency Fund category.");
     state = getDefaultState();
     saveState();
+  } else {
+    cleanRecords();
   }
+  
   return state;
 }
 
