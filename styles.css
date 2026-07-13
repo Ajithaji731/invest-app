@@ -34,6 +34,7 @@
   --color-ppf: #06b6d4;          /* Cyan */
   --color-nps: #ec4899;          /* Pink */
   --color-goals: #f97316;        /* Orange */
+  --color-goldinvestment: #eab308;       /* Yellow */
   --color-emergency: #64748b;    /* Slate */
   
   --sidebar-width: 260px;
@@ -313,6 +314,7 @@ header.top-header {
 .badge-ppf { background-color: rgba(6, 182, 212, 0.15); color: var(--color-ppf); }
 .badge-nps { background-color: rgba(236, 72, 153, 0.15); color: var(--color-nps); }
 .badge-goals { background-color: rgba(249, 115, 22, 0.15); color: var(--color-goals); }
+.badge-goldinvestment { background-color: rgba(234, 179, 8, 0.15); color: var(--color-goldinvestment); }
 .badge-emergencyfund { background-color: rgba(100, 116, 139, 0.15); color: var(--color-emergency); }
 
 /* Views switching */

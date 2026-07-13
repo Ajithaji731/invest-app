@@ -11,11 +11,11 @@ const elements = {
   viewTitle: document.getElementById('viewTitle'),
   menuToggleBtn: document.getElementById('menuToggleBtn'),
   sidebar: document.getElementById('sidebar'),
-  
+
   // Header Month Selector
   globalMonthSelect: document.getElementById('globalMonthSelect'),
   globalMonthWrapper: document.getElementById('globalMonthWrapper'),
-  
+
   // Dashboard KPI
   kpiNetWorth: document.getElementById('kpi-net-worth'),
   kpiNetWorthChange: document.getElementById('kpi-net-worth-change'),
@@ -30,20 +30,20 @@ const elements = {
   diffBannerDesc: document.getElementById('diffBannerDesc'),
   diffBannerValue: document.getElementById('diffBannerValue'),
   categoryBreakdownTable: document.getElementById('categoryBreakdownTable').querySelector('tbody'),
-  
+
   // Assets View
   assetsTable: document.getElementById('assetsTable').querySelector('tbody'),
   openAddAssetModalBtn: document.getElementById('openAddAssetModalBtn'),
   addAssetModal: document.getElementById('addAssetModal'),
   addAssetForm: document.getElementById('addAssetForm'),
-  
+
   // Edit Asset Modal
   editAssetModal: document.getElementById('editAssetModal'),
   editAssetForm: document.getElementById('editAssetForm'),
   editAssetId: document.getElementById('editAssetId'),
   editAssetNameInput: document.getElementById('editAssetNameInput'),
   editAssetSectorInput: document.getElementById('editAssetSectorInput'),
-  
+
   // Monthly Records View
   recordMonthInput: document.getElementById('recordMonthInput'),
   monthStatusBadgeContainer: document.getElementById('monthStatusBadgeContainer'),
@@ -52,7 +52,7 @@ const elements = {
   recordsFormContainer: document.getElementById('recordsFormContainer'),
   monthlyRecordsForm: document.getElementById('monthlyRecordsForm'),
   saveRecordsBtn: document.getElementById('saveRecordsBtn'),
-  
+
   // Analysis View
   analysisMonthName: document.getElementById('analysisMonthName'),
   analysisTopAsset: document.getElementById('analysis-top-asset'),
@@ -61,7 +61,7 @@ const elements = {
   analysisBestClass: document.getElementById('analysis-best-class'),
   analysisBestClassPct: document.getElementById('analysis-best-class-pct'),
   assetPerformanceTable: document.getElementById('assetPerformanceTable').querySelector('tbody'),
-  
+
   // Settings View
   exportTextarea: document.getElementById('exportTextarea'),
   copyJsonBtn: document.getElementById('copyJsonBtn'),
@@ -72,7 +72,7 @@ const elements = {
   resetDemoBtn: document.getElementById('resetDemoBtn'),
   clearAllDataBtn: document.getElementById('clearAllDataBtn'),
   fetchLiveNavsBtn: document.getElementById('fetchLiveNavsBtn'),
-  
+
   // Quick Actions
   quickAddRecordBtn: document.getElementById('quickAddRecordBtn')
 };
@@ -102,7 +102,7 @@ function formatPercent(value, showPlus = true) {
   if (value === undefined || value === null || isNaN(value)) return '0.00%';
   const prefix = showPlus && value > 0 ? '+' : '';
   const rounded = value.toFixed(2) + '%';
-  
+
   if (value > 0.01) {
     return `<span class="trend-up">${prefix}${rounded} <i class="fa-solid fa-caret-up"></i></span>`;
   } else if (value < -0.01) {
@@ -127,21 +127,21 @@ function formatMonthName(monthStr) {
  */
 function updateMonthDropdowns() {
   const months = portfolioState.getMonths();
-  
+
   // If no months, hide selector
   if (months.length === 0) {
     elements.globalMonthWrapper.style.display = 'none';
     selectedMonth = '';
     return;
   }
-  
+
   elements.globalMonthWrapper.style.display = 'flex';
-  
+
   // Keep previous selection if still valid, otherwise pick the latest month
   if (!selectedMonth || !months.includes(selectedMonth)) {
     selectedMonth = months[months.length - 1]; // latest month
   }
-  
+
   elements.globalMonthSelect.innerHTML = months.map(m => {
     const formatted = formatMonthName(m);
     const selectedAttr = m === selectedMonth ? 'selected' : '';
@@ -155,7 +155,7 @@ function updateMonthDropdowns() {
 function switchView(viewName) {
   currentView = viewName;
   isDraftMode = false; // Reset draft mode when switching tabs
-  
+
   // Toggle navigation class
   elements.navItems.forEach(item => {
     if (item.getAttribute('data-view') === viewName) {
@@ -193,7 +193,7 @@ function switchView(viewName) {
 
   // Render view-specific data
   renderCurrentView();
-  
+
   // Close mobile menu on switch
   elements.sidebar.classList.remove('open');
 }
@@ -231,7 +231,7 @@ function renderDashboard() {
   }
 
   const metrics = portfolioState.getPortfolioMetrics(selectedMonth);
-  
+
   // Net Worth KPI
   elements.kpiNetWorth.textContent = formatCurrency(metrics.totalCurrent);
   if (metrics.mom) {
@@ -270,7 +270,7 @@ function renderDashboard() {
     const totalChange = metrics.mom.netWorthChange;
     const isPositive = totalChange >= 0;
     elements.dashboardDiffBanner.className = isPositive ? 'diff-banner' : 'diff-banner negative';
-    
+
     elements.diffBannerTitle.innerHTML = `Portfolio change in <strong>${formatMonthName(selectedMonth)}</strong>: <strong>${formatCurrency(totalChange)}</strong>`;
     elements.diffBannerDesc.innerHTML = `Contributions: <strong>${formatCurrency(metrics.mom.contributions)}</strong> | Estimated Market Gain/Loss: <strong>${formatCurrency(metrics.mom.marketGain)}</strong>`;
     elements.diffBannerValue.innerHTML = `${isPositive ? '+' : ''}${metrics.mom.netWorthChangePercent.toFixed(1)}%`;
@@ -284,13 +284,13 @@ function renderDashboard() {
   // Category Table Breakdown
   const categoriesBreakdown = portfolioState.getCategoryBreakdown(selectedMonth);
   const totalValue = metrics.totalCurrent;
-  
+
   elements.categoryBreakdownTable.innerHTML = Object.keys(categoriesBreakdown).map(cat => {
     const item = categoriesBreakdown[cat];
     const gain = item.current - item.invested;
     const gainPercent = item.invested > 0 ? (gain / item.invested) * 100 : 0;
     const share = totalValue > 0 ? (item.current / totalValue) * 100 : 0;
-    
+
     return `
       <tr>
         <td><span class="badge badge-${cat.toLowerCase().replace(/[^a-z0-9]/g, '')}">${cat}</span></td>
@@ -317,10 +317,10 @@ function showEmptyDashboardState() {
   elements.kpiProfitPercent.textContent = 'No records';
   elements.kpiMomGain.textContent = '₹0.00';
   elements.kpiMomPercent.textContent = 'No records';
-  
+
   elements.dashboardDiffBanner.style.display = 'none';
   elements.categoryBreakdownTable.innerHTML = `<tr><td colspan="6" style="text-align: center;" class="text-muted">No data available. Go to "Monthly Updates" or load preloaded data.</td></tr>`;
-  
+
   portfolioCharts.renderAllocationChart({});
   portfolioCharts.renderNetWorthTrendChart([]);
 }
@@ -330,7 +330,7 @@ function showEmptyDashboardState() {
    ========================================================================= */
 function renderAssets() {
   const assets = portfolioState.getAssets();
-  
+
   if (assets.length === 0) {
     elements.assetsTable.innerHTML = `<tr><td colspan="4" style="text-align: center;" class="text-muted">No assets found. Click "Add Asset" to start tracking!</td></tr>`;
     return;
@@ -385,7 +385,7 @@ let recordEditMonth = '';
 
 function renderMonthlyUpdateView() {
   const months = portfolioState.getMonths();
-  
+
   if (!recordEditMonth) {
     if (months.length > 0) {
       recordEditMonth = months[months.length - 1]; // default to latest
@@ -397,7 +397,7 @@ function renderMonthlyUpdateView() {
   }
 
   elements.recordMonthInput.value = recordEditMonth;
-  
+
   const assets = portfolioState.getAssets();
   if (assets.length === 0) {
     elements.recordsFormContainer.innerHTML = `<div class="text-muted" style="text-align: center; padding: 24px;">Please add some assets first on the "Asset List" page!</div>`;
@@ -410,7 +410,7 @@ function renderMonthlyUpdateView() {
   }
 
   const isSaved = months.includes(recordEditMonth);
-  
+
   // Set up badges and buttons visibility based on month state
   let statusHtml = '';
   if (isSaved) {
@@ -432,7 +432,7 @@ function renderMonthlyUpdateView() {
     elements.clonePreviousMonthBtn.style.display = 'none';
     if (elements.fetchLiveNavsBtn) elements.fetchLiveNavsBtn.style.display = 'none';
   }
-  
+
   if (elements.monthStatusBadgeContainer) {
     elements.monthStatusBadgeContainer.innerHTML = statusHtml;
   }
@@ -452,7 +452,7 @@ function renderMonthlyUpdateView() {
       </div>
     `;
     elements.recordsFormContainer.innerHTML = emptyHtml;
-    
+
     const startDraftBtn = document.getElementById('startDraftBtn');
     if (startDraftBtn) {
       startDraftBtn.addEventListener('click', () => {
@@ -465,19 +465,19 @@ function renderMonthlyUpdateView() {
 
   // Render form (either for saved records or draft editing records)
   const currentMonthRecords = portfolioState.getRecordsForMonth(recordEditMonth);
-  
+
   // Find the chronologically previous month from the list of saved months
   const priorMonths = months.filter(m => m < recordEditMonth).sort();
   const prevMonthStr = priorMonths.length > 0 ? priorMonths[priorMonths.length - 1] : '';
   const prevMonthRecords = prevMonthStr ? portfolioState.getRecordsForMonth(prevMonthStr) : {};
-  
+
   // Show clone button only if there is a previous month and current month is unsaved
   const showClone = prevMonthStr !== '' && !isSaved;
   elements.clonePreviousMonthBtn.style.display = showClone ? 'inline-flex' : 'none';
 
   // Group assets by category
   const grouped = {};
-  const categories = ['Stocks/ETFs', 'Mutual Funds', 'EPF', 'PPF', 'NPS', 'Goals', 'Emergency Fund'];
+  const categories = ['Stocks/ETFs', 'Mutual Funds', 'EPF', 'PPF', 'NPS', 'Goals', 'Gold Investment', 'Emergency Fund'];
   categories.forEach(cat => grouped[cat] = []);
   assets.forEach(asset => {
     if (grouped[asset.category]) {
@@ -653,7 +653,7 @@ function renderAnalysis() {
   }
 
   elements.analysisMonthName.textContent = formatMonthName(selectedMonth);
-  
+
   const months = portfolioState.getMonths();
   let totalInvestmentsSum = 0;
   months.forEach(m => {
@@ -664,7 +664,7 @@ function renderAnalysis() {
   elements.analysisAvgInvestment.textContent = formatCurrency(avgInvestment);
 
   const perfList = portfolioState.getAssetPerformanceList(selectedMonth);
-  
+
   if (perfList.length === 0) {
     elements.assetPerformanceTable.innerHTML = `<tr><td colspan="9" style="text-align: center;" class="text-muted">No records for this month.</td></tr>`;
     return;
@@ -679,17 +679,17 @@ function renderAnalysis() {
     let totalMomChangeInvested = 0;
     let totalMomChangeCurrent = 0;
     let isNew = stockPerfs.every(p => p.isNew);
-    
+
     stockPerfs.forEach(p => {
       totalInvested += p.invested;
       totalCurrent += p.current;
       totalMomChangeInvested += p.momChangeInvested;
       totalMomChangeCurrent += p.momChangeCurrent;
     });
-    
+
     const totalGain = totalCurrent - totalInvested;
     const totalGainPercent = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
-    
+
     stockSummary = {
       asset: {
         id: 'stocks_etfs_summary',
@@ -723,7 +723,8 @@ function renderAnalysis() {
     'PPF': 4,
     'NPS': 5,
     'Goals': 6,
-    'Emergency Fund': 7
+    'Gold Investment': 7,
+    'Emergency Fund': 8
   };
   const allAssets = portfolioState.getAssets();
   finalPerfList.sort((a, b) => {
@@ -737,7 +738,7 @@ function renderAnalysis() {
 
   const activePerf = finalPerfList.filter(p => p.invested > 0);
   activePerf.sort((a, b) => b.gainPercent - a.gainPercent);
-  
+
   if (activePerf.length > 0) {
     elements.analysisTopAsset.textContent = activePerf[0].asset.name;
     elements.analysisTopAssetPct.innerHTML = `${formatPercent(activePerf[0].gainPercent)} total gain`;
@@ -749,7 +750,7 @@ function renderAnalysis() {
   const classBreakdown = portfolioState.getCategoryBreakdown(selectedMonth);
   let bestClass = '-';
   let bestClassPct = -999999;
-  
+
   Object.keys(classBreakdown).forEach(cat => {
     const c = classBreakdown[cat];
     const gainPct = c.invested > 0 ? ((c.current - c.invested) / c.invested) * 100 : 0;
@@ -770,10 +771,10 @@ function renderAnalysis() {
   // Render Performance Table
   elements.assetPerformanceTable.innerHTML = finalPerfList.map(p => {
     const showUnits = p.units && p.units > 0 ? p.units.toLocaleString('en-IN', { maximumFractionDigits: 3 }) : '—';
-    
+
     const momInv = p.isNew ? `+${formatCurrency(p.momChangeInvested)} (New)` : p.momChangeInvested > 0 ? `+${formatCurrency(p.momChangeInvested)}` : p.momChangeInvested < 0 ? `-${formatCurrency(Math.abs(p.momChangeInvested))}` : '₹0.00';
     const momCur = p.momChangeCurrent > 0 ? `+${formatCurrency(p.momChangeCurrent)}` : p.momChangeCurrent < 0 ? `-${formatCurrency(Math.abs(p.momChangeCurrent))}` : '₹0.00';
-    
+
     const momInvClass = p.isNew || p.momChangeInvested > 0 ? 'trend-up' : p.momChangeInvested < 0 ? 'trend-down' : 'trend-neutral';
     const momCurClass = p.momChangeCurrent > 0 ? 'trend-up' : p.momChangeCurrent < 0 ? 'trend-down' : 'trend-neutral';
 
@@ -815,10 +816,10 @@ async function fetchLiveNAVs() {
   const fetchBtn = document.getElementById('fetchLiveNavsBtn');
   const rows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id]');
   const assets = portfolioState.getAssets();
-  
+
   let mfCount = 0;
   let successCount = 0;
-  
+
   // Find mutual fund rows
   const mfRows = [];
   rows.forEach(row => {
@@ -828,26 +829,26 @@ async function fetchLiveNAVs() {
       mfRows.push({ row, asset });
     }
   });
-  
+
   if (mfRows.length === 0) {
     alert("No Mutual Funds with valid Scheme Codes found in your inventory. Edit assets in the Asset List page to add their AMFI scheme codes first!");
     return;
   }
-  
+
   fetchBtn.disabled = true;
   const originalHtml = fetchBtn.innerHTML;
   fetchBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching NAVs...`;
-  
+
   for (const item of mfRows) {
     const { row, asset } = item;
     const unitsInput = row.querySelector('.record-units');
     const currentInput = row.querySelector('.record-current');
     const units = parseFloat(unitsInput.value) || 0;
-    
+
     if (units <= 0) {
       continue; // Skip if no units entered
     }
-    
+
     mfCount++;
     try {
       const response = await fetch(`https://api.mfapi.in/mf/${asset.schemeCode}`);
@@ -858,7 +859,7 @@ async function fetchLiveNAVs() {
           if (!isNaN(nav)) {
             const calculatedCurrent = units * nav;
             currentInput.value = calculatedCurrent.toFixed(2);
-            
+
             // Add a visual flash glow effect
             currentInput.style.borderColor = 'var(--success)';
             currentInput.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.4)';
@@ -866,7 +867,7 @@ async function fetchLiveNAVs() {
               currentInput.style.borderColor = '';
               currentInput.style.boxShadow = '';
             }, 3000);
-            
+
             successCount++;
           }
         }
@@ -875,10 +876,10 @@ async function fetchLiveNAVs() {
       console.error(`Failed to fetch NAV for ${asset.name}:`, err);
     }
   }
-  
+
   fetchBtn.disabled = false;
   fetchBtn.innerHTML = originalHtml;
-  
+
   if (mfCount === 0) {
     alert("Please enter a non-zero number of Units in the form for your Mutual Funds before fetching live NAVs.");
   } else {
@@ -913,7 +914,7 @@ function setupModals() {
    GLOBAL EVENT LISTENERS ATTACHMENT
    ========================================================================= */
 function setupEventListeners() {
-  
+
   elements.navItems.forEach(item => {
     item.addEventListener('click', () => {
       const view = item.getAttribute('data-view');
@@ -945,10 +946,10 @@ function setupEventListeners() {
     const category = document.getElementById('assetCategorySelect').value;
     const sector = document.getElementById('assetSectorInput').value;
     const schemeCode = document.getElementById('assetSchemeCodeInput').value;
-    
+
     portfolioState.addAsset(name, category, sector, schemeCode);
     elements.addAssetModal.classList.remove('active');
-    
+
     renderAssets();
     if (currentView === 'monthly-records') {
       renderMonthlyUpdateView();
@@ -961,7 +962,7 @@ function setupEventListeners() {
     const name = elements.editAssetNameInput.value;
     const sector = elements.editAssetSectorInput.value;
     const schemeCode = document.getElementById('editAssetSchemeCodeInput').value;
-    
+
     portfolioState.updateAsset(id, name, sector, schemeCode);
     elements.editAssetModal.classList.remove('active');
     renderAssets();
@@ -977,12 +978,12 @@ function setupEventListeners() {
     e.preventDefault();
     const months = portfolioState.getMonths();
     const currentIdx = months.indexOf(recordEditMonth);
-    
+
     let srcIdx = currentIdx - 1;
     if (srcIdx < 0 && months.length > 0) {
       srcIdx = months.length - 1;
     }
-    
+
     if (srcIdx >= 0 && months[srcIdx] !== recordEditMonth) {
       portfolioState.cloneMonthRecords(months[srcIdx], recordEditMonth);
       renderMonthlyUpdateView();
@@ -1002,20 +1003,20 @@ function setupEventListeners() {
   function recalculateStocksTotal() {
     const stockRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-category="Stocks/ETFs"]');
     let totalAddition = 0;
-    
+
     stockRows.forEach(row => {
       const additionInput = row.querySelector('.record-addition');
       if (additionInput) {
         totalAddition += parseFloat(additionInput.value) || 0;
       }
     });
-    
+
     // Update total stock addition display
     const totalAdditionDisplay = document.getElementById('stocks-total-addition-display');
     if (totalAdditionDisplay) {
       totalAdditionDisplay.textContent = formatCurrency(totalAddition);
     }
-    
+
     // Auto-update total stock valuation input
     const totalCurrentInput = document.getElementById('stocks-total-current');
     if (totalCurrentInput) {
@@ -1030,13 +1031,13 @@ function setupEventListeners() {
       if (e.target.classList.contains('record-addition')) {
         const row = e.target.closest('.record-form-row');
         const category = row.getAttribute('data-category');
-        
+
         if (category === 'Stocks/ETFs') {
           recalculateStocksTotal();
         } else {
           const prevCurrent = parseFloat(e.target.getAttribute('data-prev-current')) || 0;
           const addition = parseFloat(e.target.value) || 0;
-          
+
           const currentInput = row.querySelector('.record-current');
           if (currentInput) {
             currentInput.value = (prevCurrent + addition).toFixed(2);
@@ -1050,10 +1051,10 @@ function setupEventListeners() {
     e.preventDefault();
     if (confirm(`Are you sure you want to delete all valuations recorded for ${formatMonthName(recordEditMonth)}?`)) {
       portfolioState.deleteMonthRecords(recordEditMonth);
-      
+
       const remainingMonths = portfolioState.getMonths();
       recordEditMonth = remainingMonths.length > 0 ? remainingMonths[remainingMonths.length - 1] : '';
-      
+
       updateMonthDropdowns();
       renderMonthlyUpdateView();
     }
@@ -1061,20 +1062,20 @@ function setupEventListeners() {
 
   elements.monthlyRecordsForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    
+
     // 1. Process all non-Stocks/ETFs rows normally
     const nonStockRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id]:not([data-category="Stocks/ETFs"])');
     nonStockRows.forEach(row => {
       const assetId = row.getAttribute('data-asset-id');
       const units = parseFloat(row.querySelector('.record-units').value) || 0;
-      
+
       const additionInput = row.querySelector('.record-addition');
       const prevInvested = parseFloat(additionInput.getAttribute('data-prev-invested')) || 0;
       const addition = parseFloat(additionInput.value) || 0;
-      
+
       const invested = prevInvested + addition;
       const current = parseFloat(row.querySelector('.record-current').value) || 0;
-      
+
       portfolioState.updateMonthlyRecord(recordEditMonth, assetId, invested, current, units);
     });
 
@@ -1086,21 +1087,21 @@ function setupEventListeners() {
     stockRows.forEach(row => {
       const assetId = row.getAttribute('data-asset-id');
       const units = parseFloat(row.querySelector('.record-units').value) || 0;
-      
+
       const additionInput = row.querySelector('.record-addition');
       const prevInvested = parseFloat(additionInput.getAttribute('data-prev-invested')) || 0;
       const addition = parseFloat(additionInput.value) || 0;
-      
+
       const invested = prevInvested + addition;
       totalStockInvested += invested;
-      
+
       stockList.push({ assetId, invested, units });
     });
 
     const stocksTotalCurrentInput = document.getElementById('stocks-total-current');
     if (stocksTotalCurrentInput) {
       const totalStockCurrent = parseFloat(stocksTotalCurrentInput.value) || 0;
-      
+
       stockList.forEach(stock => {
         let currentVal = 0;
         if (totalStockInvested > 0) {
@@ -1108,7 +1109,7 @@ function setupEventListeners() {
         } else {
           currentVal = totalStockCurrent / stockList.length; // Fallback to equal split if nothing invested
         }
-        
+
         portfolioState.updateMonthlyRecord(recordEditMonth, stock.assetId, stock.invested, currentVal, stock.units);
       });
     }
@@ -1116,7 +1117,7 @@ function setupEventListeners() {
     isDraftMode = false; // Reset draft mode upon successful save
     updateMonthDropdowns();
     selectedMonth = recordEditMonth;
-    
+
     alert(`Portfolio valuations for ${formatMonthName(recordEditMonth)} saved successfully!`);
     switchView('dashboard');
   });
@@ -1128,15 +1129,15 @@ function setupEventListeners() {
       const gistId = document.getElementById('gistIdInput').value.trim();
       const token = document.getElementById('githubTokenInput').value.trim();
       const statusSpan = document.getElementById('cloudSyncStatus');
-      
+
       portfolioState.saveCloudConfig(gistId, token);
-      
+
       statusSpan.style.color = 'var(--text-secondary)';
       statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
-      
+
       // Trigger a sync
       portfolioState.saveState();
-      
+
       setTimeout(() => {
         statusSpan.style.color = 'var(--success)';
         statusSpan.innerHTML = '<i class="fa-solid fa-check"></i> Connected & Saved';
@@ -1167,7 +1168,7 @@ function setupEventListeners() {
       alert('Please paste some JSON backup content first!');
       return;
     }
-    
+
     if (portfolioState.importData(jsonStr)) {
       alert('Portfolio data imported successfully!');
       portfolioState.loadState();
@@ -1181,9 +1182,9 @@ function setupEventListeners() {
   elements.importFile.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = function (evt) {
       const contents = evt.target.result;
       elements.importTextarea.value = contents;
       alert('File loaded into text area. Click "Restore Portfolio" to finalize.');
@@ -1207,7 +1208,7 @@ function setupEventListeners() {
       location.reload();
     }
   });
-  
+
   setupModals();
 }
 

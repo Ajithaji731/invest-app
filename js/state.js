@@ -53,11 +53,11 @@ const DEFAULT_ASSETS = [
   // NPS
   { id: 'nps_tier1', name: 'NPS Tier 1', category: 'NPS', sector: 'Retirement' },
   { id: 'nps_tier2', name: 'NPS Tier 2', category: 'NPS', sector: 'Retirement' },
-  
+
   // Goal-focused funds (Emergency, Car fund and Digi Gold tracked separately)
   { id: 'goal_emergency_fund', name: 'Emergency Fund', category: 'Emergency Fund', sector: 'Emergency Savings' },
   { id: 'goal_car_fund', name: 'Car Fund', category: 'Goals', sector: 'Car Purchase 2028' },
-  { id: 'goal_digi_gold', name: 'Digi Gold', category: 'Goals', sector: 'Gold Investments' }
+  { id: 'goal_digi_gold', name: 'Digi Gold', category: 'Gold Investment', sector: 'Gold Investments' }
 ];
 
 // Preloaded records from the user's Excel sheet and screenshots.
@@ -73,7 +73,7 @@ const DEFAULT_RECORDS = {
     'st_metalietf': { invested: 1201.00, current: 1239.20, units: 100 },
     'st_southbank': { invested: 1062.96, current: 1096.80, units: 28 },
     'st_nippon_it': { invested: 944.40, current: 974.52, units: 24 },
-    
+
     'mf_parag_parikh': { invested: 17004.07, current: 16923.20, units: 182.216 },
     'mf_icici_n50': { invested: 10001.27, current: 9953.70, units: 37.442 },
     'mf_bandhan_small': { invested: 8401.58, current: 8361.64, units: 165.981 }
@@ -89,11 +89,11 @@ const DEFAULT_RECORDS = {
     'st_metalietf': { invested: 1325.50, current: 1210.20, units: 110 },
     'st_nippon_it': { invested: 1148.10, current: 1048.20, units: 30 },
     'st_southbank': { invested: 1146.00, current: 1046.10, units: 30 },
-    
+
     'mf_parag_parikh': { invested: 21004.07, current: 19255.50, units: 225.714 },
     'mf_icici_n50': { invested: 15001.27, current: 13752.40, units: 56.334 },
     'mf_bandhan_small': { invested: 12401.58, current: 11369.10, units: 247.288 },
-    
+
     'epf_balance': { invested: 118813.00, current: 118813.00, units: 1 },
     'nps_tier1': { invested: 4500.00, current: 4132.86, units: 1 },
     'nps_tier2': { invested: 2000.00, current: 1867.82, units: 1 },
@@ -112,11 +112,11 @@ const DEFAULT_RECORDS = {
     'st_metalietf': { invested: 1438.80, current: 1379.30, units: 120 },
     'st_nippon_it': { invested: 1310.05, current: 1255.90, units: 35 },
     'st_southbank': { invested: 1250.58, current: 1199.10, units: 33 },
-    
+
     'mf_parag_parikh': { invested: 23004.00, current: 23010.90, units: 249.171 },
     'mf_icici_n50': { invested: 17001.00, current: 17006.10, units: 64.853 },
     'mf_bandhan_small': { invested: 14401.00, current: 14405.25, units: 292.098 },
-    
+
     'epf_balance': { invested: 125567.00, current: 125567.00, units: 1 },
     'nps_tier1': { invested: 5000.00, current: 4829.00, units: 1 },
     'nps_tier2': { invested: 2250.00, current: 2226.00, units: 1 },
@@ -135,11 +135,11 @@ const DEFAULT_RECORDS = {
     'st_metalietf': { invested: 1737.45, current: 1698.80, units: 143 },
     'st_nippon_it': { invested: 1310.05, current: 1280.90, units: 35 },
     'st_southbank': { invested: 1250.58, current: 1222.80, units: 33 },
-    
+
     'mf_parag_parikh': { invested: 28004.00, current: 28077.00, units: 303.9 },
     'mf_icici_n50': { invested: 21000.00, current: 21054.70, units: 80.7 },
     'mf_bandhan_small': { invested: 17400.00, current: 17445.30, units: 349.6 },
-    
+
     'epf_balance': { invested: 125567.00, current: 125567.00, units: 1 },
     'ppf_balance': { invested: 2000.00, current: 2000.00, units: 1 },
     'nps_tier1': { invested: 5500.00, current: 5289.00, units: 1 },
@@ -159,11 +159,11 @@ const DEFAULT_RECORDS = {
     'st_metalietf': { invested: 1737.45, current: 1947.66, units: 143 },
     'st_nippon_it': { invested: 1310.05, current: 1142.40, units: 35 },
     'st_southbank': { invested: 1250.58, current: 1200.00, units: 33 },
-    
+
     'mf_parag_parikh': { invested: 32003.00, current: 31278.00, units: 303.9 },
     'mf_icici_n50': { invested: 25000.00, current: 23939.00, units: 80.7 },
     'mf_bandhan_small': { invested: 22001.00, current: 23003.00, units: 349.6 },
-    
+
     'epf_balance': { invested: 132321.00, current: 132321.00, units: 1 },
     'ppf_balance': { invested: 4000.00, current: 4000.00, units: 1 },
     'nps_tier1': { invested: 6000.00, current: 5800.00, units: 1 },
@@ -189,7 +189,7 @@ async function syncToCloud() {
   }
   isSaving = true;
   pendingSave = false;
-  
+
   const config = getCloudConfig();
   if (!config.gistId || !config.token) {
     isSaving = false;
@@ -310,7 +310,7 @@ async function loadState() {
   } else {
     cleanRecords();
   }
-  
+
   return state;
 }
 
@@ -434,11 +434,11 @@ function getPortfolioMetrics(monthStr) {
   const months = getMonths();
   const index = months.indexOf(monthStr);
   const currentRecords = state.records[monthStr] || {};
-  
+
   let totalInvested = 0;
   let totalCurrentInvestments = 0;
   let totalCurrent = 0; // Net Worth (includes Goals)
-  
+
   // Sum up all assets for the current month
   state.assets.forEach(asset => {
     const record = currentRecords[asset.id];
@@ -451,21 +451,21 @@ function getPortfolioMetrics(monthStr) {
       }
     }
   });
-  
+
   const absoluteGain = totalCurrentInvestments - totalInvested;
   const absoluteGainPercent = totalInvested > 0 ? (absoluteGain / totalInvested) * 100 : 0;
-  
+
   let momMetrics = null;
-  
+
   // Calculate differences compared to previous month
   if (index > 0) {
     const prevMonthStr = months[index - 1];
     const prevRecords = state.records[prevMonthStr] || {};
-    
+
     let prevTotalInvested = 0;
     let prevTotalCurrentInvestments = 0;
     let prevTotalCurrent = 0;
-    
+
     state.assets.forEach(asset => {
       const record = prevRecords[asset.id];
       if (record) {
@@ -477,17 +477,17 @@ function getPortfolioMetrics(monthStr) {
         }
       }
     });
-    
+
     // Net Worth Change (includes Goals)
     const netWorthChange = totalCurrent - prevTotalCurrent;
     const netWorthChangePercent = prevTotalCurrent > 0 ? (netWorthChange / prevTotalCurrent) * 100 : 0;
-    
+
     // Investment contributions (excludes Goals)
     const contributions = totalInvested - prevTotalInvested;
-    
+
     // Market return on investments (excludes Goals)
     const marketGain = (totalCurrentInvestments - totalInvested) - (prevTotalCurrentInvestments - prevTotalInvested);
-    
+
     momMetrics = {
       prevMonth: prevMonthStr,
       netWorthChange,
@@ -496,7 +496,7 @@ function getPortfolioMetrics(monthStr) {
       marketGain
     };
   }
-  
+
   return {
     month: monthStr,
     totalInvested,             // Excludes Goals
@@ -514,7 +514,7 @@ function getPortfolioMetrics(monthStr) {
 function getCategoryBreakdown(monthStr) {
   const records = state.records[monthStr] || {};
   const breakdown = {};
-  
+
   state.assets.forEach(asset => {
     const record = records[asset.id];
     if (record) {
@@ -525,7 +525,7 @@ function getCategoryBreakdown(monthStr) {
       breakdown[asset.category].current += record.current;
     }
   });
-  
+
   return breakdown;
 }
 
@@ -538,19 +538,19 @@ function getAssetPerformanceList(monthStr) {
   const currentRecords = state.records[monthStr] || {};
   const prevMonthStr = index > 0 ? months[index - 1] : null;
   const prevRecords = prevMonthStr ? (state.records[prevMonthStr] || {}) : {};
-  
+
   return state.assets.map(asset => {
     const curr = currentRecords[asset.id];
     const prev = prevRecords[asset.id];
-    
+
     if (!curr) return null; // Asset was not active or tracked this month
-    
+
     const gain = curr.current - curr.invested;
     const gainPercent = curr.invested > 0 ? (gain / curr.invested) * 100 : 0;
-    
+
     let momChangeInvested = 0;
     let momChangeCurrent = 0;
-    
+
     if (prev) {
       momChangeInvested = curr.invested - prev.invested;
       momChangeCurrent = curr.current - prev.current;
@@ -559,7 +559,7 @@ function getAssetPerformanceList(monthStr) {
       momChangeInvested = curr.invested;
       momChangeCurrent = curr.current;
     }
-    
+
     return {
       asset,
       units: curr.units,
@@ -582,12 +582,12 @@ function getTrendData() {
   const trend = months.map(month => {
     const metrics = getPortfolioMetrics(month);
     const catBreakdown = getCategoryBreakdown(month);
-    
+
     const categoriesVal = {};
     Object.keys(catBreakdown).forEach(cat => {
       categoriesVal[cat] = catBreakdown[cat].current;
     });
-    
+
     return {
       month,
       totalInvested: metrics.totalInvested,
@@ -596,7 +596,7 @@ function getTrendData() {
       categories: categoriesVal
     };
   });
-  
+
   return trend;
 }
 
