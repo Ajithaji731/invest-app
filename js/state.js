@@ -311,6 +311,14 @@ async function loadState() {
     cleanRecords();
   }
 
+  // Migrate Digi Gold to Gold Investment category for existing state
+  const digiGoldAsset = state.assets.find(a => a.id === 'goal_digi_gold');
+  if (digiGoldAsset && digiGoldAsset.category === 'Goals') {
+    console.log("Migrating Digi Gold to Gold Investment category.");
+    digiGoldAsset.category = 'Gold Investment';
+    saveState();
+  }
+
   return state;
 }
 
