@@ -298,7 +298,8 @@ async function loadState() {
   }
 
   try {
-    const res = await fetch(config.appScriptUrl);
+    // Append timestamp to bypass aggressive browser caching of GET requests
+    const res = await fetch(config.appScriptUrl + '?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const cloudState = await res.json();
       const localStateStr = localStorage.getItem(STORAGE_KEY);
