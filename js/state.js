@@ -176,60 +176,64 @@ const DEFAULT_RECORDS = {
 
 let state = {
   assets: [],
-  records: {}
+  records: {},
+  lastModified: Date.now()
 };
 
 let isSaving = false;
 let pendingSave = false;
 
+let syncTimeout = null;
+
 async function syncToCloud() {
-  if (isSaving) {
-    pendingSave = true;
-    return;
-  }
-  isSaving = true;
-  pendingSave = false;
-
-  const config = getCloudConfig();
-  if (!config.gistId || !config.token) {
-    isSaving = false;
-    return; // Cannot sync without config
-  }
-
-  try {
-    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
-      method: 'PATCH',
-      headers: {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': `Bearer ${config.token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        files: {
-          'portfolio.json': {
-            content: JSON.stringify(state)
-          }
+  if (syncTimeout) clearTimeout(syncTimeout);
+  
+  return new Promise((resolve) => {
+    syncTimeout = setTimeout(async () => {
+      isSaving = true;
+      try {
+        const config = getCloudConfig();
+        if (!config.gistId || !config.token) {
+          isSaving = false;
+          resolve(false);
+          return;
         }
-      })
-    });
-    if (!res.ok) console.error("Cloud sync failed with status", res.status);
-  } catch (e) {
-    console.error("Failed to sync to cloud", e);
-  } finally {
-    isSaving = false;
-    if (pendingSave) {
-      syncToCloud();
-    }
-  }
+
+        const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${config.token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              'portfolio.json': {
+                content: JSON.stringify(state)
+              }
+            }
+          })
+        });
+        if (!res.ok) console.error("Cloud sync failed with status", res.status);
+        resolve(res.ok);
+      } catch (e) {
+        console.error("Failed to sync to cloud", e);
+        resolve(false);
+      } finally {
+        isSaving = false;
+      }
+    }, 1000); // 1-second debounce
+  });
 }
 
 /**
  * Save current state to localStorage and cloud
  */
 function saveState() {
+  state.lastModified = Date.now();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  syncToCloud(); // fire and forget to avoid blocking UI
+  return syncToCloud(); // Returns a promise that resolves after the debounced sync
 }
 
 /**
@@ -281,17 +285,45 @@ async function loadState() {
       headers: {
         'Accept': 'application/vnd.github+json',
         'Authorization': `Bearer ${config.token}`,
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Cache-Control': 'no-cache'
+      },
+      cache: 'no-store'
     });
     if (res.ok) {
       const data = await res.json();
       const file = data.files['portfolio.json'];
-      if (file && file.content) {
-        state = JSON.parse(file.content);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); // update local backup
-      } else {
+      if (!file) {
         throw new Error("Invalid cloud data format: missing portfolio.json");
+      }
+      
+      let contentToParse = file.content;
+      if (file.truncated || !contentToParse) {
+        const rawRes = await fetch(file.raw_url, { cache: 'no-store' });
+        if (!rawRes.ok) throw new Error("Failed to fetch raw gist content");
+        contentToParse = await rawRes.text();
+      }
+      
+      const cloudState = JSON.parse(contentToParse);
+      const localStateStr = localStorage.getItem(STORAGE_KEY);
+      let localState = null;
+      if (localStateStr) {
+        try { localState = JSON.parse(localStateStr); } catch (e) {}
+      }
+
+      if (localState && localState.lastModified && cloudState.lastModified) {
+        if (localState.lastModified > cloudState.lastModified) {
+          console.log("Local state is newer than cloud state. Skipping overwrite and syncing local to cloud.");
+          state = localState;
+          syncToCloud(); // Push local changes that were missed
+        } else {
+          state = cloudState;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+      } else {
+        // No timestamps or first time, trust cloud
+        state = cloudState;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       }
     } else {
       throw new Error(`Cloud fetch failed with status ${res.status}`);
@@ -301,15 +333,8 @@ async function loadState() {
     loadLocalFallback();
   }
 
-  // Run cleanup/migrations on loaded state
-  const hasEmergencyFund = state.assets.some(a => a.id === 'goal_emergency_fund' && a.category === 'Emergency Fund');
-  if (!hasEmergencyFund) {
-    console.log("Migrating older state to include separate Emergency Fund category.");
-    state = getDefaultState();
-    saveState();
-  } else {
-    cleanRecords();
-  }
+  // Run cleanup on loaded state
+  cleanRecords();
 
   // Migrate Digi Gold to Gold Investment category for existing state
   const digiGoldAsset = state.assets.find(a => a.id === 'goal_digi_gold');

@@ -1060,7 +1060,7 @@ function setupEventListeners() {
     }
   });
 
-  elements.monthlyRecordsForm.addEventListener('submit', (e) => {
+  elements.monthlyRecordsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     // 1. Process all non-Stocks/ETFs rows normally
@@ -1118,6 +1118,7 @@ function setupEventListeners() {
     updateMonthDropdowns();
     selectedMonth = recordEditMonth;
 
+    await portfolioState.saveState(); // Ensure the debounced cloud sync gets queued/awaited
     alert(`Portfolio valuations for ${formatMonthName(recordEditMonth)} saved successfully!`);
     switchView('dashboard');
   });
@@ -1136,7 +1137,7 @@ function setupEventListeners() {
       statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
 
       // Trigger a sync
-      portfolioState.saveState();
+      await portfolioState.saveState();
 
       setTimeout(() => {
         statusSpan.style.color = 'var(--success)';
