@@ -298,9 +298,6 @@ function renderDashboard() {
   });
   portfolioCharts.renderInvestedTrendChart(trendData);
 
-  // Charts
-  portfolioCharts.renderAllocationChart(categoriesBreakdown);
-  portfolioCharts.renderNetWorthTrendChart(portfolioState.getTrendData());
 }
 
 function showEmptyDashboardState() {
