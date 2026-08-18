@@ -217,18 +217,15 @@ async function syncToCloud() {
 
         const res = await fetch(config.appScriptUrl, {
           method: 'POST',
+          mode: 'no-cors',
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
           body: JSON.stringify(state)
         });
         
-        if (!res.ok) {
-          console.error("Cloud sync failed with status", res.status);
-          resolve(false);
-        } else {
-          resolve(true);
-        }
+        // With no-cors mode, the response is opaque and res.ok is false with status 0
+        resolve(true);
       } catch (e) {
         console.error("Failed to sync to cloud", e);
         resolve(false);
