@@ -232,76 +232,71 @@ function renderDashboard() {
 
   const metrics = portfolioState.getPortfolioMetrics(selectedMonth);
 
-  // Net Worth KPI
-  elements.kpiNetWorth.textContent = formatCurrency(metrics.totalCurrent);
-  if (metrics.mom) {
-    elements.kpiNetWorthChange.innerHTML = `${formatPercent(metrics.mom.netWorthChangePercent)} vs last month`;
-  } else {
-    elements.kpiNetWorthChange.innerHTML = `<span class="text-muted">First recorded month</span>`;
-  }
+  // Net Worth KPI (Removed)
+  // elements.kpiNetWorth.textContent = formatCurrency(metrics.totalCurrent);
 
   // Total Invested KPI
   elements.kpiInvested.textContent = formatCurrency(metrics.totalInvested);
-  if (metrics.mom) {
-    const investedDiff = metrics.mom.contributions;
+  if (metrics.mom && metrics.mom.change !== undefined) {
+    const investedDiff = metrics.mom.change;
     const sign = investedDiff >= 0 ? '+' : '';
     elements.kpiInvestedChange.innerHTML = `<span class="${investedDiff > 0 ? 'trend-up' : investedDiff < 0 ? 'trend-down' : 'trend-neutral'}">${sign}${formatCurrency(investedDiff)} additions</span>`;
   } else {
     elements.kpiInvestedChange.innerHTML = `<span class="text-muted">First recorded month</span>`;
   }
 
-  // Absolute Return KPI
-  elements.kpiProfit.textContent = formatCurrency(metrics.absoluteGain);
-  elements.kpiProfitPercent.innerHTML = `${formatPercent(metrics.absoluteGainPercent)} absolute yield`;
-
   // MoM Return KPI
-  if (metrics.mom) {
-    elements.kpiMomGain.textContent = formatCurrency(metrics.mom.marketGain);
-    const momYield = metrics.totalInvested > 0 ? (metrics.mom.marketGain / metrics.totalInvested) * 100 : 0;
-    elements.kpiMomPercent.innerHTML = `${formatPercent(momYield)} month return`;
+  if (metrics.mom && metrics.mom.change !== undefined) {
+    elements.kpiMomGain.textContent = formatCurrency(metrics.mom.change);
+    const momYield = (metrics.totalInvested - metrics.mom.change) > 0 ? (metrics.mom.change / (metrics.totalInvested - metrics.mom.change)) * 100 : 0;
+    elements.kpiMomPercent.innerHTML = `${formatPercent(momYield)} growth`;
   } else {
-    elements.kpiMomGain.textContent = formatCurrency(metrics.absoluteGain);
-    elements.kpiMomPercent.innerHTML = `${formatPercent(metrics.absoluteGainPercent)} total return`;
+    elements.kpiMomGain.textContent = '₹0.00';
+    elements.kpiMomPercent.innerHTML = `<span class="text-muted">First recorded month</span>`;
   }
 
   // Render Difference Banner
   elements.dashboardDiffBanner.style.display = 'flex';
-  if (metrics.mom) {
-    const totalChange = metrics.mom.netWorthChange;
+  if (metrics.mom && metrics.mom.change !== undefined) {
+    const totalChange = metrics.mom.change;
     const isPositive = totalChange >= 0;
     elements.dashboardDiffBanner.className = isPositive ? 'diff-banner' : 'diff-banner negative';
 
     elements.diffBannerTitle.innerHTML = `Portfolio change in <strong>${formatMonthName(selectedMonth)}</strong>: <strong>${formatCurrency(totalChange)}</strong>`;
-    elements.diffBannerDesc.innerHTML = `Contributions: <strong>${formatCurrency(metrics.mom.contributions)}</strong> | Estimated Market Gain/Loss: <strong>${formatCurrency(metrics.mom.marketGain)}</strong>`;
-    elements.diffBannerValue.innerHTML = `${isPositive ? '+' : ''}${metrics.mom.netWorthChangePercent.toFixed(1)}%`;
+    elements.diffBannerDesc.innerHTML = `Total new investments added to the portfolio.`;
+    const momYield = (metrics.totalInvested - metrics.mom.change) > 0 ? (metrics.mom.change / (metrics.totalInvested - metrics.mom.change)) * 100 : 0;
+    elements.diffBannerValue.innerHTML = `${isPositive ? '+' : ''}${momYield.toFixed(1)}%`;
   } else {
     elements.dashboardDiffBanner.className = 'diff-banner';
     elements.diffBannerTitle.innerHTML = `Historical progression starting in <strong>${formatMonthName(selectedMonth)}</strong>`;
-    elements.diffBannerDesc.innerHTML = `Total starting assets value is ${formatCurrency(metrics.totalCurrent)}. Add monthly updates to see differences!`;
+    elements.diffBannerDesc.innerHTML = `Total starting invested value is ${formatCurrency(metrics.totalInvested)}. Add monthly updates to see differences!`;
     elements.diffBannerValue.innerHTML = `100%`;
   }
 
   // Category Table Breakdown
-  const categoriesBreakdown = portfolioState.getCategoryBreakdown(selectedMonth);
-  const totalValue = metrics.totalCurrent;
+  const totalValue = metrics.totalInvested;
 
-  elements.categoryBreakdownTable.innerHTML = Object.keys(categoriesBreakdown).map(cat => {
-    const item = categoriesBreakdown[cat];
-    const gain = item.current - item.invested;
-    const gainPercent = item.invested > 0 ? (gain / item.invested) * 100 : 0;
-    const share = totalValue > 0 ? (item.current / totalValue) * 100 : 0;
+  elements.categoryBreakdownTable.innerHTML = Object.keys(metrics.breakdown).map(cat => {
+    const item = metrics.breakdown[cat];
+    const share = totalValue > 0 ? (item.invested / totalValue) * 100 : 0;
 
     return `
       <tr>
         <td><span class="badge badge-${cat.toLowerCase().replace(/[^a-z0-9]/g, '')}">${cat}</span></td>
         <td><strong>${formatCurrency(item.invested)}</strong></td>
-        <td><strong>${formatCurrency(item.current)}</strong></td>
-        <td><strong>${formatCurrency(gain)}</strong></td>
-        <td>${formatPercent(gainPercent)}</td>
         <td>${share.toFixed(1)}%</td>
       </tr>
     `;
   }).join('');
+
+  // Charts
+  portfolioCharts.renderAllocationChart(metrics.breakdown);
+  
+  const allMonths = portfolioState.getMonths();
+  const trendData = allMonths.map(m => {
+    return { month: m, totalInvested: portfolioState.getPortfolioMetrics(m).totalInvested };
+  });
+  portfolioCharts.renderInvestedTrendChart(trendData);
 
   // Charts
   portfolioCharts.renderAllocationChart(categoriesBreakdown);
@@ -487,14 +482,11 @@ function renderMonthlyUpdateView() {
     }
   });
 
-  // Header
   const headerHtml = `
-    <div class="record-form-row header" style="margin-bottom: 12px;">
+    <div class="record-form-row header" style="margin-bottom: 12px; grid-template-columns: 2fr 1fr 1fr;">
       <div>Asset Name & Category</div>
-      <div>Units <span style="font-size: 10px; font-weight: normal; opacity: 0.65; display: block; margin-top: 2px;">(For live price fetch)</span></div>
       <div>Prev Invested</div>
       <div>This Month's Addition <span style="font-size: 10px; font-weight: normal; opacity: 0.65; display: block; margin-top: 2px;">(Enter +/- amount)</span></div>
-      <div>Current Valuation <span style="font-size: 10px; font-weight: normal; opacity: 0.65; display: block; margin-top: 2px;">(Auto-filled / Edit)</span></div>
     </div>
   `;
 
@@ -504,134 +496,36 @@ function renderMonthlyUpdateView() {
     const catAssets = grouped[category];
     if (catAssets.length === 0) return;
 
-    // Category section header
     html += `
       <div class="category-section-header" style="grid-column: 1 / -1; margin-top: 28px; margin-bottom: 12px; font-family: var(--font-heading); font-size: 14px; font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
         <span class="badge badge-${category.toLowerCase().replace(/[^a-z0-9]/g, '')}">${category}</span>
       </div>
     `;
 
-    if (category === 'Stocks/ETFs') {
-      let prevTotalStockInvested = 0;
-      let prevTotalStockCurrent = 0;
-      let totalStockCurrent = 0;
+    catAssets.forEach(asset => {
+      const prev = prevMonthRecords[asset.id] || { invested: 0 };
+      const curr = currentMonthRecords[asset.id];
 
-      catAssets.forEach(asset => {
-        const prev = prevMonthRecords[asset.id] || { invested: 0, current: 0, units: 0 };
-        prevTotalStockInvested += prev.invested;
-        prevTotalStockCurrent += prev.current;
-
-        const curr = currentMonthRecords[asset.id];
-        if (curr) {
-          totalStockCurrent += curr.current;
-        }
-      });
-
-      // Default July total current valuation to June's ending valuation if we are creating a draft
-      if (!isSaved && totalStockCurrent === 0) {
-        totalStockCurrent = prevTotalStockCurrent;
+      let addition = 0;
+      if (curr) {
+        addition = curr.invested - prev.invested;
       }
 
-      let totalStockAddition = 0;
-
-      catAssets.forEach(asset => {
-        const prev = prevMonthRecords[asset.id] || { invested: 0, current: 0, units: 0 };
-        const curr = currentMonthRecords[asset.id];
-
-        let units = '';
-        let addition = 0;
-
-        if (curr) {
-          units = curr.units !== undefined ? curr.units : '';
-          addition = curr.invested - prev.invested;
-        } else {
-          units = prev.units !== undefined && prev.units !== 1 && prev.units !== 0 ? prev.units : '';
-          addition = 0;
-        }
-
-        totalStockAddition += addition;
-        const showPrevInvested = formatCurrency(prev.invested);
-
-        html += `
-          <div class="record-form-row" data-asset-id="${asset.id}" data-category="Stocks/ETFs" style="margin-bottom: 8px;">
-            <div class="asset-info">
-              <span class="asset-name">${asset.name}</span>
-              <span class="asset-category">${asset.category} ${asset.sector ? `· ${asset.sector}` : ''}</span>
-            </div>
-            <div>
-              <input type="number" step="any" placeholder="Units" class="form-input record-units" value="${units}" title="Enter Units for ${asset.name}">
-            </div>
-            <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">
-              ${showPrevInvested}
-            </div>
-            <div>
-              <input type="number" step="any" placeholder="+/- Addition" class="form-input record-addition" value="${addition !== 0 ? addition : ''}" data-prev-invested="${prev.invested}" data-prev-current="${prev.current}" title="Enter addition for ${asset.name}">
-            </div>
-            <div style="text-align: center; color: var(--text-muted); font-size: 14px; padding-right: 20px;">
-              —
-            </div>
-          </div>
-        `;
-      });
-
-      // Category summary row for Stocks/ETFs
       html += `
-        <div class="record-form-row stocks-summary-row" style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.15); font-weight: bold; border-radius: var(--border-radius-md); margin-top: 8px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.03);">
-          <div class="asset-info" style="font-weight: bold; color: var(--color-stocks);">
-            <span class="asset-name">Stocks/ETFs Category Total</span>
-            <span class="asset-category" style="color: var(--text-muted);">Overall Current Valuation</span>
+        <div class="record-form-row" data-asset-id="${asset.id}" data-category="${category}" style="margin-bottom: 8px; grid-template-columns: 2fr 1fr 1fr;">
+          <div class="asset-info">
+            <span class="asset-name">${asset.name}</span>
+            <span class="asset-category">${asset.category} ${asset.sector ? `· ${asset.sector}` : ''}</span>
           </div>
-          <div style="text-align: center; color: var(--text-muted); font-size: 14px; padding-right: 20px;">—</div>
-          <div style="font-size: 13.5px; font-weight: bold; color: var(--text-primary);">${formatCurrency(prevTotalStockInvested)}</div>
-          <div style="font-size: 13.5px; font-weight: bold; color: var(--text-primary);" id="stocks-total-addition-display">${formatCurrency(totalStockAddition)}</div>
+          <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">
+            ${formatCurrency(prev.invested)}
+          </div>
           <div>
-            <input type="number" step="any" placeholder="₹ Total Stocks Value" class="form-input record-category-current" id="stocks-total-current" value="${totalStockCurrent !== 0 ? totalStockCurrent : ''}" data-prev-total-current="${prevTotalStockCurrent}" required style="font-weight: bold; border-color: rgba(139, 92, 246, 0.3); background-color: rgba(139, 92, 246, 0.02); text-shadow: 0 0 1px rgba(255,255,255,0.05);" title="Enter total valuation for all Stocks and ETFs combined">
+            <input type="number" step="any" placeholder="+/- Addition" class="form-input record-addition" value="${addition !== 0 ? addition : ''}" data-prev-invested="${prev.invested}" title="Enter addition for ${asset.name}">
           </div>
         </div>
       `;
-    } else {
-      catAssets.forEach(asset => {
-        const prev = prevMonthRecords[asset.id] || { invested: 0, current: 0, units: 0 };
-        const curr = currentMonthRecords[asset.id];
-
-        let units = '';
-        let addition = 0;
-        let currentVal = '';
-
-        if (curr) {
-          units = curr.units !== undefined ? curr.units : '';
-          addition = curr.invested - prev.invested;
-          currentVal = curr.current !== undefined ? curr.current : '';
-        } else {
-          units = prev.units !== undefined && prev.units !== 1 && prev.units !== 0 ? prev.units : '';
-          addition = 0;
-          currentVal = prev.current !== undefined ? prev.current : '';
-        }
-
-        const showPrevInvested = formatCurrency(prev.invested);
-
-        html += `
-          <div class="record-form-row" data-asset-id="${asset.id}" data-category="${category}" style="margin-bottom: 8px;">
-            <div class="asset-info">
-              <span class="asset-name">${asset.name}</span>
-              <span class="asset-category">${asset.category} ${asset.sector ? `· ${asset.sector}` : ''}</span>
-            </div>
-            <div>
-              <input type="number" step="any" placeholder="Units" class="form-input record-units" value="${units}" title="Enter Units for ${asset.name}">
-            </div>
-            <div style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">
-              ${showPrevInvested}
-            </div>
-            <div>
-              <input type="number" step="any" placeholder="+/- Addition" class="form-input record-addition" value="${addition !== 0 ? addition : ''}" data-prev-invested="${prev.invested}" data-prev-current="${prev.current}" title="Enter addition for ${asset.name}">
-            </div>
-            <div>
-              <input type="number" step="any" placeholder="₹ Current Value" class="form-input record-current" value="${currentVal}" required title="Enter Current Value for ${asset.name}">
-            </div>
-          </div>
-        `;
-      });
-    }
+    });
   });
 
   elements.recordsFormContainer.innerHTML = headerHtml + html;
@@ -741,7 +635,7 @@ function renderAnalysis() {
 
   if (activePerf.length > 0) {
     elements.analysisTopAsset.textContent = activePerf[0].asset.name;
-    elements.analysisTopAssetPct.innerHTML = `${formatPercent(activePerf[0].gainPercent)} total gain`;
+    elements.analysisTopAssetPct.innerHTML = `Most Additions`;
   } else {
     elements.analysisTopAsset.textContent = '-';
     elements.analysisTopAssetPct.textContent = '-';
@@ -749,20 +643,19 @@ function renderAnalysis() {
 
   const classBreakdown = portfolioState.getCategoryBreakdown(selectedMonth);
   let bestClass = '-';
-  let bestClassPct = -999999;
+  let bestClassVal = -1;
 
   Object.keys(classBreakdown).forEach(cat => {
     const c = classBreakdown[cat];
-    const gainPct = c.invested > 0 ? ((c.current - c.invested) / c.invested) * 100 : 0;
-    if (gainPct > bestClassPct) {
-      bestClassPct = gainPct;
+    if (c.invested > bestClassVal) {
+      bestClassVal = c.invested;
       bestClass = cat;
     }
   });
 
   if (bestClass !== '-') {
     elements.analysisBestClass.textContent = bestClass;
-    elements.analysisBestClassPct.innerHTML = `${formatPercent(bestClassPct)} average gain`;
+    elements.analysisBestClassPct.innerHTML = `Most Invested Category`;
   } else {
     elements.analysisBestClass.textContent = '-';
     elements.analysisBestClassPct.textContent = '-';
@@ -770,25 +663,15 @@ function renderAnalysis() {
 
   // Render Performance Table
   elements.assetPerformanceTable.innerHTML = finalPerfList.map(p => {
-    const showUnits = p.units && p.units > 0 ? p.units.toLocaleString('en-IN', { maximumFractionDigits: 3 }) : '—';
-
     const momInv = p.isNew ? `+${formatCurrency(p.momChangeInvested)} (New)` : p.momChangeInvested > 0 ? `+${formatCurrency(p.momChangeInvested)}` : p.momChangeInvested < 0 ? `-${formatCurrency(Math.abs(p.momChangeInvested))}` : '₹0.00';
-    const momCur = p.momChangeCurrent > 0 ? `+${formatCurrency(p.momChangeCurrent)}` : p.momChangeCurrent < 0 ? `-${formatCurrency(Math.abs(p.momChangeCurrent))}` : '₹0.00';
-
     const momInvClass = p.isNew || p.momChangeInvested > 0 ? 'trend-up' : p.momChangeInvested < 0 ? 'trend-down' : 'trend-neutral';
-    const momCurClass = p.momChangeCurrent > 0 ? 'trend-up' : p.momChangeCurrent < 0 ? 'trend-down' : 'trend-neutral';
 
     return `
       <tr>
         <td><strong>${p.asset.name}</strong></td>
         <td><span class="badge badge-${p.asset.category.toLowerCase().replace(/[^a-z0-9]/g, '')}">${p.asset.category}</span></td>
-        <td style="text-align: center; padding-right: 20px;">${showUnits}</td>
         <td><strong>${formatCurrency(p.invested)}</strong></td>
-        <td><strong>${formatCurrency(p.current)}</strong></td>
-        <td><strong>${formatCurrency(p.gain)}</strong></td>
-        <td>${formatPercent(p.gainPercent)}</td>
         <td class="${momInvClass}">${momInv}</td>
-        <td class="${momCurClass}">${momCur}</td>
       </tr>
     `;
   }).join('');
@@ -809,83 +692,6 @@ function renderSettings() {
   if (tokenInput) tokenInput.value = cloudConfig.token || '';
 }
 
-/**
- * Fetch latest Mutual Fund NAVs from AMFI API and calculate current values based on Units
- */
-async function fetchLiveNAVs() {
-  const fetchBtn = document.getElementById('fetchLiveNavsBtn');
-  const rows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id]');
-  const assets = portfolioState.getAssets();
-
-  let mfCount = 0;
-  let successCount = 0;
-
-  // Find mutual fund rows
-  const mfRows = [];
-  rows.forEach(row => {
-    const assetId = row.getAttribute('data-asset-id');
-    const asset = assets.find(a => a.id === assetId);
-    if (asset && asset.category === 'Mutual Funds' && asset.schemeCode) {
-      mfRows.push({ row, asset });
-    }
-  });
-
-  if (mfRows.length === 0) {
-    alert("No Mutual Funds with valid Scheme Codes found in your inventory. Edit assets in the Asset List page to add their AMFI scheme codes first!");
-    return;
-  }
-
-  fetchBtn.disabled = true;
-  const originalHtml = fetchBtn.innerHTML;
-  fetchBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching NAVs...`;
-
-  for (const item of mfRows) {
-    const { row, asset } = item;
-    const unitsInput = row.querySelector('.record-units');
-    const currentInput = row.querySelector('.record-current');
-    const units = parseFloat(unitsInput.value) || 0;
-
-    if (units <= 0) {
-      continue; // Skip if no units entered
-    }
-
-    mfCount++;
-    try {
-      const response = await fetch(`https://api.mfapi.in/mf/${asset.schemeCode}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result && result.data && result.data.length > 0) {
-          const nav = parseFloat(result.data[0].nav);
-          if (!isNaN(nav)) {
-            const calculatedCurrent = units * nav;
-            currentInput.value = calculatedCurrent.toFixed(2);
-
-            // Add a visual flash glow effect
-            currentInput.style.borderColor = 'var(--success)';
-            currentInput.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.4)';
-            setTimeout(() => {
-              currentInput.style.borderColor = '';
-              currentInput.style.boxShadow = '';
-            }, 3000);
-
-            successCount++;
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`Failed to fetch NAV for ${asset.name}:`, err);
-    }
-  }
-
-  fetchBtn.disabled = false;
-  fetchBtn.innerHTML = originalHtml;
-
-  if (mfCount === 0) {
-    alert("Please enter a non-zero number of Units in the form for your Mutual Funds before fetching live NAVs.");
-  } else {
-    alert(`Successfully updated live NAVs for ${successCount} of ${mfCount} Mutual Fund(s)! (Updated fields are highlighted in green)`);
-  }
-}
 
 /* =========================================================================
    MODALS CLOSING UTILITIES
@@ -999,53 +805,7 @@ function setupEventListeners() {
     });
   }
 
-  // Helper to recalculate Stocks/ETFs additions and automatically adjust the total valuation input
-  function recalculateStocksTotal() {
-    const stockRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-category="Stocks/ETFs"]');
-    let totalAddition = 0;
-
-    stockRows.forEach(row => {
-      const additionInput = row.querySelector('.record-addition');
-      if (additionInput) {
-        totalAddition += parseFloat(additionInput.value) || 0;
-      }
-    });
-
-    // Update total stock addition display
-    const totalAdditionDisplay = document.getElementById('stocks-total-addition-display');
-    if (totalAdditionDisplay) {
-      totalAdditionDisplay.textContent = formatCurrency(totalAddition);
-    }
-
-    // Auto-update total stock valuation input
-    const totalCurrentInput = document.getElementById('stocks-total-current');
-    if (totalCurrentInput) {
-      const prevTotalCurrent = parseFloat(totalCurrentInput.getAttribute('data-prev-total-current')) || 0;
-      totalCurrentInput.value = (prevTotalCurrent + totalAddition).toFixed(2);
-    }
-  }
-
-  // Auto-update valuation when addition is typed
-  if (elements.recordsFormContainer) {
-    elements.recordsFormContainer.addEventListener('input', (e) => {
-      if (e.target.classList.contains('record-addition')) {
-        const row = e.target.closest('.record-form-row');
-        const category = row.getAttribute('data-category');
-
-        if (category === 'Stocks/ETFs') {
-          recalculateStocksTotal();
-        } else {
-          const prevCurrent = parseFloat(e.target.getAttribute('data-prev-current')) || 0;
-          const addition = parseFloat(e.target.value) || 0;
-
-          const currentInput = row.querySelector('.record-current');
-          if (currentInput) {
-            currentInput.value = (prevCurrent + addition).toFixed(2);
-          }
-        }
-      }
-    });
-  }
+  // No more valuation inputs to auto-calculate.
 
   elements.deleteMonthBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1063,89 +823,30 @@ function setupEventListeners() {
   elements.monthlyRecordsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // 1. Process all non-Stocks/ETFs rows normally
-    const nonStockRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id]:not([data-category="Stocks/ETFs"])');
-    nonStockRows.forEach(row => {
+    // Process all rows normally to extract new invested amount
+    const assetRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id]');
+    assetRows.forEach(row => {
       const assetId = row.getAttribute('data-asset-id');
-      const units = parseFloat(row.querySelector('.record-units').value) || 0;
 
       const additionInput = row.querySelector('.record-addition');
       const prevInvested = parseFloat(additionInput.getAttribute('data-prev-invested')) || 0;
       const addition = parseFloat(additionInput.value) || 0;
 
       const invested = prevInvested + addition;
-      const current = parseFloat(row.querySelector('.record-current').value) || 0;
 
-      portfolioState.updateMonthlyRecord(recordEditMonth, assetId, invested, current, units);
+      portfolioState.updateMonthlyRecord(recordEditMonth, assetId, invested);
     });
-
-    // 2. Process Stocks/ETFs rows: sum invested and distribute total valuation proportionally
-    const stockRows = elements.recordsFormContainer.querySelectorAll('.record-form-row[data-asset-id][data-category="Stocks/ETFs"]');
-    let totalStockInvested = 0;
-    const stockList = [];
-
-    stockRows.forEach(row => {
-      const assetId = row.getAttribute('data-asset-id');
-      const units = parseFloat(row.querySelector('.record-units').value) || 0;
-
-      const additionInput = row.querySelector('.record-addition');
-      const prevInvested = parseFloat(additionInput.getAttribute('data-prev-invested')) || 0;
-      const addition = parseFloat(additionInput.value) || 0;
-
-      const invested = prevInvested + addition;
-      totalStockInvested += invested;
-
-      stockList.push({ assetId, invested, units });
-    });
-
-    const stocksTotalCurrentInput = document.getElementById('stocks-total-current');
-    if (stocksTotalCurrentInput) {
-      const totalStockCurrent = parseFloat(stocksTotalCurrentInput.value) || 0;
-
-      stockList.forEach(stock => {
-        let currentVal = 0;
-        if (totalStockInvested > 0) {
-          currentVal = (stock.invested / totalStockInvested) * totalStockCurrent;
-        } else {
-          currentVal = totalStockCurrent / stockList.length; // Fallback to equal split if nothing invested
-        }
-
-        portfolioState.updateMonthlyRecord(recordEditMonth, stock.assetId, stock.invested, currentVal, stock.units);
-      });
-    }
 
     isDraftMode = false; // Reset draft mode upon successful save
     updateMonthDropdowns();
     selectedMonth = recordEditMonth;
 
     await portfolioState.saveState(); // Ensure the debounced cloud sync gets queued/awaited
-    alert(`Portfolio valuations for ${formatMonthName(recordEditMonth)} saved successfully!`);
+    alert(`Investment updates for ${formatMonthName(recordEditMonth)} saved successfully!`);
     switchView('dashboard');
   });
 
-  const cloudSyncForm = document.getElementById('cloudSyncForm');
-  if (cloudSyncForm) {
-    cloudSyncForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const gistId = document.getElementById('gistIdInput').value.trim();
-      const token = document.getElementById('githubTokenInput').value.trim();
-      const statusSpan = document.getElementById('cloudSyncStatus');
 
-      portfolioState.saveCloudConfig(gistId, token);
-
-      statusSpan.style.color = 'var(--text-secondary)';
-      statusSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
-
-      // Trigger a sync
-      await portfolioState.saveState();
-
-      setTimeout(() => {
-        statusSpan.style.color = 'var(--success)';
-        statusSpan.innerHTML = '<i class="fa-solid fa-check"></i> Connected & Saved';
-        setTimeout(() => { statusSpan.innerHTML = ''; }, 3000);
-      }, 1000);
-    });
-  }
 
   elements.copyJsonBtn.addEventListener('click', () => {
     elements.exportTextarea.select();

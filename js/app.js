@@ -5,16 +5,21 @@
 
 // Launch application once DOM structure is ready
 document.addEventListener('DOMContentLoaded', async () => {
-  // Show loading overlay
+  // Remove any cloud loader element immediately
   const loader = document.getElementById('cloudLoader');
-  if (loader) loader.style.display = 'flex';
+  if (loader) loader.remove();
 
-  // Load cloud state
-  await portfolioState.loadState();
+  // Load local state instantly so the UI renders immediately (0-second wait)
+  portfolioState.loadLocalFallback();
   
-  // Hide loading overlay
-  if (loader) loader.style.display = 'none';
-
-  // Bind handlers and render primary dashboard view
+  // Render primary dashboard view
   portfolioUI.initUI();
+
+  // Perform background cloud sync without blocking the user
+  portfolioState.loadState().then(() => {
+    // Re-render UI just in case new data came from the cloud
+    if (window.renderCurrentView) {
+      window.renderCurrentView();
+    }
+  });
 });

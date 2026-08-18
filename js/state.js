@@ -1,32 +1,22 @@
 /**
  * State Management for Portfolio Tracker
- * Handles local storage persistence, historical data calculations, and analysis.
+ * Handles local storage persistence and historical data calculations.
  */
 
 const STORAGE_KEY = 'portfolio_tracker_state';
-
-// Cloud Configuration Keys
-const GIST_ID_KEY = 'portfolio_tracker_gist_id';
-const GIST_TOKEN_KEY = 'portfolio_tracker_gist_token';
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxC4m0vSxOtCL2T4bkgH2QVefsikJlsoyyFGfJHnniqF7HMFjFxFPYW0p1v2U-XLNI/exec';
 
 function getCloudConfig() {
   return {
-    gistId: localStorage.getItem(GIST_ID_KEY),
-    token: localStorage.getItem(GIST_TOKEN_KEY)
+    appScriptUrl: APP_SCRIPT_URL
   };
 }
 
-function saveCloudConfig(gistId, token) {
-  if (gistId) localStorage.setItem(GIST_ID_KEY, gistId.trim());
-  if (token) localStorage.setItem(GIST_TOKEN_KEY, token.trim());
-}
-
 function hasCloudConfig() {
-  const c = getCloudConfig();
-  return !!(c.gistId && c.token);
+  return true;
 }
 
-// Preloaded user assets from the provided Excel sheet
+// Preloaded user assets
 const DEFAULT_ASSETS = [
   // Stocks & ETFs
   { id: 'st_tata_cap', name: 'TATA Capital', category: 'Stocks/ETFs', sector: 'Financial Services (NBFC)' },
@@ -39,10 +29,10 @@ const DEFAULT_ASSETS = [
   { id: 'st_southbank', name: 'SOUTHBANK', category: 'Stocks/ETFs', sector: 'Banking - Private Sector' },
   { id: 'st_nippon_it', name: 'Nippon India ETF IT', category: 'Stocks/ETFs', sector: 'Information Technology' },
 
-  // Mutual Funds (Pre-populated with AMFI scheme codes for live NAV lookup)
-  { id: 'mf_parag_parikh', name: 'Parag parikh flexi cap fund - Direct', category: 'Mutual Funds', sector: 'Flexi Cap', schemeCode: '122639' },
-  { id: 'mf_icici_n50', name: 'ICICI Prudential Nifty 50 Index Fund - Direct', category: 'Mutual Funds', sector: 'Index Fund', schemeCode: '120268' },
-  { id: 'mf_bandhan_small', name: 'Bandhan Small Cap Fund - Direct', category: 'Mutual Funds', sector: 'Small Cap', schemeCode: '129272' },
+  // Mutual Funds
+  { id: 'mf_parag_parikh', name: 'Parag parikh flexi cap fund - Direct', category: 'Mutual Funds', sector: 'Flexi Cap' },
+  { id: 'mf_icici_n50', name: 'ICICI Prudential Nifty 50 Index Fund - Direct', category: 'Mutual Funds', sector: 'Index Fund' },
+  { id: 'mf_bandhan_small', name: 'Bandhan Small Cap Fund - Direct', category: 'Mutual Funds', sector: 'Small Cap' },
 
   // EPF / PF
   { id: 'epf_balance', name: 'EPF Balance', category: 'EPF', sector: 'Retirement' },
@@ -54,123 +44,151 @@ const DEFAULT_ASSETS = [
   { id: 'nps_tier1', name: 'NPS Tier 1', category: 'NPS', sector: 'Retirement' },
   { id: 'nps_tier2', name: 'NPS Tier 2', category: 'NPS', sector: 'Retirement' },
 
-  // Goal-focused funds (Emergency, Car fund and Digi Gold tracked separately)
+  // Goal-focused funds
   { id: 'goal_emergency_fund', name: 'Emergency Fund', category: 'Emergency Fund', sector: 'Emergency Savings' },
   { id: 'goal_car_fund', name: 'Car Fund', category: 'Goals', sector: 'Car Purchase 2028' },
   { id: 'goal_digi_gold', name: 'Digi Gold', category: 'Gold Investment', sector: 'Gold Investments' }
 ];
 
-// Preloaded records from the user's Excel sheet and screenshots.
+// Preloaded records from the user's provided data
 const DEFAULT_RECORDS = {
-  // February 2026
   '2026-02': {
-    'st_tata_cap': { invested: 16282.50, current: 16800.20, units: 50 },
-    'st_tatsilv': { invested: 13512.94, current: 13942.60, units: 526 },
-    'st_goldietf': { invested: 5314.22, current: 5483.20, units: 50 },
-    'st_hdfc': { invested: 4649.25, current: 4797.10, units: 5 },
-    'st_bpcl': { invested: 2209.44, current: 2279.70, units: 6 },
-    'st_icici': { invested: 1402.00, current: 1446.60, units: 1 },
-    'st_metalietf': { invested: 1201.00, current: 1239.20, units: 100 },
-    'st_southbank': { invested: 1062.96, current: 1096.80, units: 28 },
-    'st_nippon_it': { invested: 944.40, current: 974.52, units: 24 },
-
-    'mf_parag_parikh': { invested: 17004.07, current: 16923.20, units: 182.216 },
-    'mf_icici_n50': { invested: 10001.27, current: 9953.70, units: 37.442 },
-    'mf_bandhan_small': { invested: 8401.58, current: 8361.64, units: 165.981 }
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13512.94 },
+    'st_goldietf': { invested: 5314.22 },
+    'st_hdfc': { invested: 4649.25 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_icici': { invested: 1402.00 },
+    'st_metalietf': { invested: 1201.00 },
+    'st_southbank': { invested: 1062.96 },
+    'st_nippon_it': { invested: 944.40 },
+    'mf_parag_parikh': { invested: 17004.07 },
+    'mf_icici_n50': { invested: 10001.27 },
+    'mf_bandhan_small': { invested: 8401.58 }
   },
-  // March 2026
   '2026-03': {
-    'st_tata_cap': { invested: 16282.50, current: 14866.00, units: 50 },
-    'st_tatsilv': { invested: 13512.94, current: 12337.30, units: 526 },
-    'st_hdfc': { invested: 8231.85, current: 7515.70, units: 9 },
-    'st_goldietf': { invested: 5856.34, current: 5346.80, units: 54 },
-    'st_icici': { invested: 4179.09, current: 3815.50, units: 3 },
-    'st_bpcl': { invested: 2209.44, current: 2017.20, units: 6 },
-    'st_metalietf': { invested: 1325.50, current: 1210.20, units: 110 },
-    'st_nippon_it': { invested: 1148.10, current: 1048.20, units: 30 },
-    'st_southbank': { invested: 1146.00, current: 1046.10, units: 30 },
-
-    'mf_parag_parikh': { invested: 21004.07, current: 19255.50, units: 225.714 },
-    'mf_icici_n50': { invested: 15001.27, current: 13752.40, units: 56.334 },
-    'mf_bandhan_small': { invested: 12401.58, current: 11369.10, units: 247.288 },
-
-    'epf_balance': { invested: 118813.00, current: 118813.00, units: 1 },
-    'nps_tier1': { invested: 4500.00, current: 4132.86, units: 1 },
-    'nps_tier2': { invested: 2000.00, current: 1867.82, units: 1 },
-    'goal_emergency_fund': { invested: 110000.00, current: 110000.00, units: 1 },
-    'goal_car_fund': { invested: 30000.00, current: 30000.00, units: 1 },
-    'goal_digi_gold': { invested: 4100.00, current: 4100.00, units: 1 }
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13512.94 },
+    'st_hdfc': { invested: 8231.85 },
+    'st_goldietf': { invested: 5856.34 },
+    'st_icici': { invested: 4179.09 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1325.50 },
+    'st_nippon_it': { invested: 1148.10 },
+    'st_southbank': { invested: 1146.00 },
+    'mf_parag_parikh': { invested: 21004.07 },
+    'mf_icici_n50': { invested: 15001.27 },
+    'mf_bandhan_small': { invested: 12401.58 },
+    'epf_balance': { invested: 118813.00 },
+    'nps_tier1': { invested: 4500.00 },
+    'nps_tier2': { invested: 2000.00 },
+    'goal_emergency_fund': { invested: 110000.00 },
+    'goal_car_fund': { invested: 30000.00 },
+    'goal_digi_gold': { invested: 4100.00 }
   },
-  // April 2026
   '2026-04': {
-    'st_tata_cap': { invested: 16282.50, current: 15609.30, units: 50 },
-    'st_tatsilv': { invested: 13712.05, current: 13145.10, units: 535 },
-    'st_hdfc': { invested: 9720.70, current: 9318.80, units: 11 },
-    'st_goldietf': { invested: 6482.09, current: 6214.10, units: 59 },
-    'st_icici': { invested: 5397.60, current: 5174.40, units: 4 },
-    'st_bpcl': { invested: 2209.44, current: 2118.10, units: 6 },
-    'st_metalietf': { invested: 1438.80, current: 1379.30, units: 120 },
-    'st_nippon_it': { invested: 1310.05, current: 1255.90, units: 35 },
-    'st_southbank': { invested: 1250.58, current: 1199.10, units: 33 },
-
-    'mf_parag_parikh': { invested: 23004.00, current: 23010.90, units: 249.171 },
-    'mf_icici_n50': { invested: 17001.00, current: 17006.10, units: 64.853 },
-    'mf_bandhan_small': { invested: 14401.00, current: 14405.25, units: 292.098 },
-
-    'epf_balance': { invested: 125567.00, current: 125567.00, units: 1 },
-    'nps_tier1': { invested: 5000.00, current: 4829.00, units: 1 },
-    'nps_tier2': { invested: 2250.00, current: 2226.00, units: 1 },
-    'goal_emergency_fund': { invested: 115000.00, current: 115000.00, units: 1 },
-    'goal_car_fund': { invested: 27000.00, current: 27000.00, units: 1 },
-    'goal_digi_gold': { invested: 4500.00, current: 4500.00, units: 1 }
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13712.05 },
+    'st_hdfc': { invested: 9720.70 },
+    'st_goldietf': { invested: 6482.09 },
+    'st_icici': { invested: 5397.60 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1438.80 },
+    'st_nippon_it': { invested: 1310.05 },
+    'st_southbank': { invested: 1250.58 },
+    'mf_parag_parikh': { invested: 23004.00 },
+    'mf_icici_n50': { invested: 17001.00 },
+    'mf_bandhan_small': { invested: 14401.00 },
+    'epf_balance': { invested: 125567.00 },
+    'nps_tier1': { invested: 5000.00 },
+    'nps_tier2': { invested: 2250.00 },
+    'goal_emergency_fund': { invested: 115000.00 },
+    'goal_car_fund': { invested: 27000.00 },
+    'goal_digi_gold': { invested: 4500.00 }
   },
-  // May 2026
   '2026-05': {
-    'st_tata_cap': { invested: 16282.50, current: 15920.30, units: 50 },
-    'st_tatsilv': { invested: 13712.05, current: 13407.00, units: 535 },
-    'st_hdfc': { invested: 9720.70, current: 9504.50, units: 11 },
-    'st_goldietf': { invested: 6482.09, current: 6337.90, units: 59 },
-    'st_icici': { invested: 5397.60, current: 5277.50, units: 4 },
-    'st_bpcl': { invested: 2209.44, current: 2160.30, units: 6 },
-    'st_metalietf': { invested: 1737.45, current: 1698.80, units: 143 },
-    'st_nippon_it': { invested: 1310.05, current: 1280.90, units: 35 },
-    'st_southbank': { invested: 1250.58, current: 1222.80, units: 33 },
-
-    'mf_parag_parikh': { invested: 28004.00, current: 28077.00, units: 303.9 },
-    'mf_icici_n50': { invested: 21000.00, current: 21054.70, units: 80.7 },
-    'mf_bandhan_small': { invested: 17400.00, current: 17445.30, units: 349.6 },
-
-    'epf_balance': { invested: 125567.00, current: 125567.00, units: 1 },
-    'ppf_balance': { invested: 2000.00, current: 2000.00, units: 1 },
-    'nps_tier1': { invested: 5500.00, current: 5289.00, units: 1 },
-    'nps_tier2': { invested: 2500.00, current: 2461.00, units: 1 },
-    'goal_emergency_fund': { invested: 120000.00, current: 120000.00, units: 1 },
-    'goal_car_fund': { invested: 50000.00, current: 50000.00, units: 1 },
-    'goal_digi_gold': { invested: 6400.00, current: 6400.00, units: 1 }
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13712.05 },
+    'st_hdfc': { invested: 9720.70 },
+    'st_goldietf': { invested: 6482.09 },
+    'st_icici': { invested: 5397.60 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1737.45 },
+    'st_nippon_it': { invested: 1310.05 },
+    'st_southbank': { invested: 1250.58 },
+    'mf_parag_parikh': { invested: 28004.00 },
+    'mf_icici_n50': { invested: 21000.00 },
+    'mf_bandhan_small': { invested: 17400.00 },
+    'epf_balance': { invested: 125567.00 },
+    'ppf_balance': { invested: 2000.00 },
+    'nps_tier1': { invested: 5500.00 },
+    'nps_tier2': { invested: 2500.00 },
+    'goal_emergency_fund': { invested: 120000.00 },
+    'goal_car_fund': { invested: 50000.00 },
+    'goal_digi_gold': { invested: 6400.00 }
   },
-  // June 2026 (Stocks and Mutual Funds updated with exact values from the user's screenshots)
   '2026-06': {
-    'st_tata_cap': { invested: 16282.50, current: 15455.00, units: 50 },
-    'st_tatsilv': { invested: 13712.05, current: 13391.05, units: 535 },
-    'st_hdfc': { invested: 10478.16, current: 9043.80, units: 12 },
-    'st_goldietf': { invested: 7283.51, current: 7550.00, units: 65 },
-    'st_icici': { invested: 5397.60, current: 4968.00, units: 4 },
-    'st_bpcl': { invested: 2209.44, current: 1752.60, units: 6 },
-    'st_metalietf': { invested: 1737.45, current: 1947.66, units: 143 },
-    'st_nippon_it': { invested: 1310.05, current: 1142.40, units: 35 },
-    'st_southbank': { invested: 1250.58, current: 1200.00, units: 33 },
-
-    'mf_parag_parikh': { invested: 32003.00, current: 31278.00, units: 303.9 },
-    'mf_icici_n50': { invested: 25000.00, current: 23939.00, units: 80.7 },
-    'mf_bandhan_small': { invested: 22001.00, current: 23003.00, units: 349.6 },
-
-    'epf_balance': { invested: 132321.00, current: 132321.00, units: 1 },
-    'ppf_balance': { invested: 4000.00, current: 4000.00, units: 1 },
-    'nps_tier1': { invested: 6000.00, current: 5800.00, units: 1 },
-    'nps_tier2': { invested: 3000.00, current: 2900.00, units: 1 },
-    'goal_emergency_fund': { invested: 140000.00, current: 140000.00, units: 1 },
-    'goal_car_fund': { invested: 50000.00, current: 50000.00, units: 1 },
-    'goal_digi_gold': { invested: 8100.00, current: 8100.00, units: 1 }
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13712.05 },
+    'st_hdfc': { invested: 10478.16 },
+    'st_goldietf': { invested: 7283.51 },
+    'st_icici': { invested: 5397.60 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1737.45 },
+    'st_nippon_it': { invested: 1310.05 },
+    'st_southbank': { invested: 1250.58 },
+    'mf_parag_parikh': { invested: 32000.00 },
+    'mf_icici_n50': { invested: 25000.00 },
+    'mf_bandhan_small': { invested: 22000.00 },
+    'epf_balance': { invested: 132321.00 },
+    'ppf_balance': { invested: 4000.00 },
+    'nps_tier1': { invested: 6000.00 },
+    'nps_tier2': { invested: 3000.00 },
+    'goal_emergency_fund': { invested: 140000.00 },
+    'goal_car_fund': { invested: 50000.00 },
+    'goal_digi_gold': { invested: 8100.00 }
+  },
+  '2026-07': {
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13712.05 },
+    'st_hdfc': { invested: 10478.16 },
+    'st_goldietf': { invested: 7283.51 },
+    'st_icici': { invested: 5397.60 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1737.45 },
+    'st_nippon_it': { invested: 1310.05 },
+    'st_southbank': { invested: 1250.58 },
+    'mf_parag_parikh': { invested: 35000.00 },
+    'mf_icici_n50': { invested: 28000.00 },
+    'mf_bandhan_small': { invested: 26000.00 },
+    'epf_balance': { invested: 139075.00 },
+    'ppf_balance': { invested: 6000.00 },
+    'nps_tier1': { invested: 6500.00 },
+    'nps_tier2': { invested: 3500.00 },
+    'goal_emergency_fund': { invested: 150000.00 },
+    'goal_car_fund': { invested: 75000.00 },
+    'goal_digi_gold': { invested: 9900.00 }
+  },
+  '2026-08': {
+    'st_tata_cap': { invested: 16282.50 },
+    'st_tatsilv': { invested: 13712.05 },
+    'st_hdfc': { invested: 10478.16 },
+    'st_goldietf': { invested: 7283.51 },
+    'st_icici': { invested: 5397.60 },
+    'st_bpcl': { invested: 2209.44 },
+    'st_metalietf': { invested: 1737.45 },
+    'st_nippon_it': { invested: 1310.05 },
+    'st_southbank': { invested: 1250.58 },
+    'mf_parag_parikh': { invested: 38000.00 },
+    'mf_icici_n50': { invested: 32000.00 },
+    'mf_bandhan_small': { invested: 30000.00 },
+    'epf_balance': { invested: 144270.00 },
+    'ppf_balance': { invested: 8000.00 },
+    'nps_tier1': { invested: 7000.00 },
+    'nps_tier2': { invested: 4000.00 },
+    'goal_emergency_fund': { invested: 150000.00 },
+    'goal_car_fund': { invested: 75000.00 },
+    'goal_digi_gold': { invested: 11500.00 }
   }
 };
 
@@ -181,8 +199,6 @@ let state = {
 };
 
 let isSaving = false;
-let pendingSave = false;
-
 let syncTimeout = null;
 
 async function syncToCloud() {
@@ -193,30 +209,26 @@ async function syncToCloud() {
       isSaving = true;
       try {
         const config = getCloudConfig();
-        if (!config.gistId || !config.token) {
+        if (!config.appScriptUrl) {
           isSaving = false;
           resolve(false);
           return;
         }
 
-        const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
-          method: 'PATCH',
+        const res = await fetch(config.appScriptUrl, {
+          method: 'POST',
           headers: {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': `Bearer ${config.token}`,
-            'X-GitHub-Api-Version': '2022-11-28',
-            'Content-Type': 'application/json'
+            'Content-Type': 'text/plain;charset=utf-8'
           },
-          body: JSON.stringify({
-            files: {
-              'portfolio.json': {
-                content: JSON.stringify(state)
-              }
-            }
-          })
+          body: JSON.stringify(state)
         });
-        if (!res.ok) console.error("Cloud sync failed with status", res.status);
-        resolve(res.ok);
+        
+        if (!res.ok) {
+          console.error("Cloud sync failed with status", res.status);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
       } catch (e) {
         console.error("Failed to sync to cloud", e);
         resolve(false);
@@ -242,7 +254,8 @@ function saveState() {
 function getDefaultState() {
   return {
     assets: [...DEFAULT_ASSETS],
-    records: JSON.parse(JSON.stringify(DEFAULT_RECORDS)) // Deep copy
+    records: JSON.parse(JSON.stringify(DEFAULT_RECORDS)), // Deep copy
+    lastModified: Date.now()
   };
 }
 
@@ -250,6 +263,10 @@ function getDefaultState() {
  * Clean up empty or invalid records from the state database
  */
 function cleanRecords() {
+  if (!state) state = getDefaultState();
+  if (!state.records) state.records = {};
+  if (!state.assets) state.assets = [];
+
   Object.keys(state.records).forEach(month => {
     const monthRecs = state.records[month];
     if (monthRecs) {
@@ -275,36 +292,15 @@ function cleanRecords() {
  */
 async function loadState() {
   const config = getCloudConfig();
-  if (!config.gistId || !config.token) {
+  if (!config.appScriptUrl) {
     console.log("No cloud config found, loading from local storage.");
     return loadLocalFallback();
   }
 
   try {
-    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
-      headers: {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': `Bearer ${config.token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Cache-Control': 'no-cache'
-      },
-      cache: 'no-store'
-    });
+    const res = await fetch(config.appScriptUrl);
     if (res.ok) {
-      const data = await res.json();
-      const file = data.files['portfolio.json'];
-      if (!file) {
-        throw new Error("Invalid cloud data format: missing portfolio.json");
-      }
-      
-      let contentToParse = file.content;
-      if (file.truncated || !contentToParse) {
-        const rawRes = await fetch(file.raw_url, { cache: 'no-store' });
-        if (!rawRes.ok) throw new Error("Failed to fetch raw gist content");
-        contentToParse = await rawRes.text();
-      }
-      
-      const cloudState = JSON.parse(contentToParse);
+      const cloudState = await res.json();
       const localStateStr = localStorage.getItem(STORAGE_KEY);
       let localState = null;
       if (localStateStr) {
@@ -320,8 +316,13 @@ async function loadState() {
           state = cloudState;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         }
+      } else if (!cloudState.lastModified) {
+        // Cloud is empty. Use local state if it exists, otherwise initialize default state and push to cloud.
+        console.log("Cloud state is empty. Pushing data to cloud.");
+        state = localState || getDefaultState();
+        syncToCloud();
       } else {
-        // No timestamps or first time, trust cloud
+        // No local timestamps or first time, trust cloud
         state = cloudState;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       }
@@ -337,42 +338,79 @@ async function loadState() {
   cleanRecords();
 
   // Migrate Digi Gold to Gold Investment category for existing state
-  const digiGoldAsset = state.assets.find(a => a.id === 'goal_digi_gold');
-  if (digiGoldAsset && digiGoldAsset.category === 'Goals') {
-    console.log("Migrating Digi Gold to Gold Investment category.");
-    digiGoldAsset.category = 'Gold Investment';
-    saveState();
+  if (state && state.assets) {
+    const digiGoldAsset = state.assets.find(a => a.id === 'goal_digi_gold');
+    if (digiGoldAsset && digiGoldAsset.category === 'Goals') {
+      digiGoldAsset.category = 'Gold Investment';
+      saveState();
+    }
   }
-
-  return state;
 }
 
 function loadLocalFallback() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (data) {
+  const localData = localStorage.getItem(STORAGE_KEY);
+  if (localData) {
     try {
-      state = JSON.parse(data);
-    } catch (err) {
+      state = JSON.parse(localData);
+      
+      // Upgrade script: remove old 'current' and 'units' properties from records
+      let wasUpgraded = false;
+      Object.keys(state.records).forEach(month => {
+        Object.keys(state.records[month]).forEach(assetId => {
+          if (state.records[month][assetId].current !== undefined) {
+            delete state.records[month][assetId].current;
+            wasUpgraded = true;
+          }
+          if (state.records[month][assetId].units !== undefined) {
+            delete state.records[month][assetId].units;
+            wasUpgraded = true;
+          }
+        });
+      });
+
+      // Migration: Ensure July and August 2026 are included if they were missing from the old cache
+      const defaultState = getDefaultState();
+      if (!state.records['2026-07'] && defaultState.records['2026-07']) {
+        state.records['2026-07'] = defaultState.records['2026-07'];
+        wasUpgraded = true;
+      }
+      if (!state.records['2026-08'] && defaultState.records['2026-08']) {
+        state.records['2026-08'] = defaultState.records['2026-08'];
+        wasUpgraded = true;
+      }
+
+      if (wasUpgraded) saveState();
+
+      // If somehow the user ended up with completely 0 records due to a past crash, force load the defaults
+      if (!state.records || Object.keys(state.records).length === 0) {
+        state = getDefaultState();
+        saveState();
+      }
+
+    } catch (e) {
+      console.error("Failed to parse local storage data, resetting to default.", e);
       state = getDefaultState();
       saveState();
     }
   } else {
+    // First time load
     state = getDefaultState();
     saveState();
   }
-  return state;
 }
 
-/**
- * Get all assets
- */
 function getAssets() {
   return state.assets;
 }
 
-/**
- * Add a new investment asset
- */
+function getAssetsByCategory() {
+  return state.assets.reduce((acc, asset) => {
+    if (!acc[asset.category]) acc[asset.category] = [];
+    acc[asset.category].push(asset);
+    return acc;
+  }, {});
+}
+
 function addAsset(name, category, sector = '', schemeCode = '') {
   const id = `${category.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
   const newAsset = { id, name, category, sector, schemeCode };
@@ -381,9 +419,6 @@ function addAsset(name, category, sector = '', schemeCode = '') {
   return newAsset;
 }
 
-/**
- * Update asset meta info
- */
 function updateAsset(id, name, sector, schemeCode = '') {
   const asset = state.assets.find(a => a.id === id);
   if (asset) {
@@ -395,12 +430,8 @@ function updateAsset(id, name, sector, schemeCode = '') {
   return asset;
 }
 
-/**
- * Delete an asset and all its historical records
- */
 function deleteAsset(id) {
   state.assets = state.assets.filter(a => a.id !== id);
-  // Remove from all monthly records
   Object.keys(state.records).forEach(month => {
     if (state.records[month][id]) {
       delete state.records[month][id];
@@ -409,38 +440,24 @@ function deleteAsset(id) {
   saveState();
 }
 
-/**
- * Get all months with records
- */
 function getMonths() {
   return Object.keys(state.records).sort();
 }
 
-/**
- * Get records for a specific month
- */
 function getRecordsForMonth(monthStr) {
   return state.records[monthStr] || {};
 }
 
-/**
- * Update or insert a record for a specific asset in a month
- */
-function updateMonthlyRecord(monthStr, assetId, invested, current, units = 0) {
+function updateMonthlyRecord(monthStr, assetId, invested) {
   if (!state.records[monthStr]) {
     state.records[monthStr] = {};
   }
   state.records[monthStr][assetId] = {
-    invested: Number(invested) || 0,
-    current: Number(current) || 0,
-    units: Number(units) || 0
+    invested: Number(invested) || 0
   };
-  saveState();
+  // Wait to call saveState explicitly to avoid rapid firing
 }
 
-/**
- * Copy all records from a source month to a target month (pre-filling inputs)
- */
 function cloneMonthRecords(srcMonth, targetMonth) {
   if (state.records[srcMonth]) {
     state.records[targetMonth] = JSON.parse(JSON.stringify(state.records[srcMonth]));
@@ -448,9 +465,6 @@ function cloneMonthRecords(srcMonth, targetMonth) {
   }
 }
 
-/**
- * Delete all records for a given month
- */
 function deleteMonthRecords(monthStr) {
   if (state.records[monthStr]) {
     delete state.records[monthStr];
@@ -458,225 +472,86 @@ function deleteMonthRecords(monthStr) {
   }
 }
 
-/**
- * Calculate portfolio-wide metrics for a specific month,
- * including MoM comparisons if a previous month exists.
- * Distinguishes between actual Investments (non-Goal categories) and Goals.
- */
 function getPortfolioMetrics(monthStr) {
   const months = getMonths();
   const index = months.indexOf(monthStr);
   const currentRecords = state.records[monthStr] || {};
 
   let totalInvested = 0;
-  let totalCurrentInvestments = 0;
-  let totalCurrent = 0; // Net Worth (includes Goals)
+  let breakdown = {}; // by category
 
-  // Sum up all assets for the current month
-  state.assets.forEach(asset => {
-    const record = currentRecords[asset.id];
-    if (record) {
-      totalCurrent += record.current;
-      const isInvestment = asset.category !== 'Goals' && asset.category !== 'Emergency Fund';
-      if (isInvestment) {
-        totalInvested += record.invested;
-        totalCurrentInvestments += record.current;
-      }
-    }
+  Object.keys(currentRecords).forEach(assetId => {
+    const asset = state.assets.find(a => a.id === assetId);
+    if (!asset) return;
+
+    const invested = currentRecords[assetId].invested || 0;
+    
+    totalInvested += invested;
+
+    if (!breakdown[asset.category]) breakdown[asset.category] = { invested: 0 };
+    breakdown[asset.category].invested += invested;
   });
 
-  const absoluteGain = totalCurrentInvestments - totalInvested;
-  const absoluteGainPercent = totalInvested > 0 ? (absoluteGain / totalInvested) * 100 : 0;
-
-  let momMetrics = null;
-
-  // Calculate differences compared to previous month
+  let momChange = 0;
   if (index > 0) {
     const prevMonthStr = months[index - 1];
     const prevRecords = state.records[prevMonthStr] || {};
-
     let prevTotalInvested = 0;
-    let prevTotalCurrentInvestments = 0;
-    let prevTotalCurrent = 0;
-
-    state.assets.forEach(asset => {
-      const record = prevRecords[asset.id];
-      if (record) {
-        prevTotalCurrent += record.current;
-        const isInvestment = asset.category !== 'Goals' && asset.category !== 'Emergency Fund';
-        if (isInvestment) {
-          prevTotalInvested += record.invested;
-          prevTotalCurrentInvestments += record.current;
-        }
-      }
+    
+    Object.keys(prevRecords).forEach(assetId => {
+      prevTotalInvested += (prevRecords[assetId].invested || 0);
     });
 
-    // Net Worth Change (includes Goals)
-    const netWorthChange = totalCurrent - prevTotalCurrent;
-    const netWorthChangePercent = prevTotalCurrent > 0 ? (netWorthChange / prevTotalCurrent) * 100 : 0;
-
-    // Investment contributions (excludes Goals)
-    const contributions = totalInvested - prevTotalInvested;
-
-    // Market return on investments (excludes Goals)
-    const marketGain = (totalCurrentInvestments - totalInvested) - (prevTotalCurrentInvestments - prevTotalInvested);
-
-    momMetrics = {
-      prevMonth: prevMonthStr,
-      netWorthChange,
-      netWorthChangePercent,
-      contributions,
-      marketGain
-    };
+    momChange = totalInvested - prevTotalInvested;
   }
 
   return {
-    month: monthStr,
-    totalInvested,             // Excludes Goals
-    totalCurrentInvestments,  // Excludes Goals
-    totalCurrent,             // Includes Goals (Net Worth)
-    absoluteGain,             // Excludes Goals
-    absoluteGainPercent,      // Excludes Goals
-    mom: momMetrics
+    totalInvested,
+    breakdown,
+    mom: {
+      change: momChange
+    }
   };
 }
 
-/**
- * Get category breakdown for a specific month
- */
-function getCategoryBreakdown(monthStr) {
-  const records = state.records[monthStr] || {};
-  const breakdown = {};
-
-  state.assets.forEach(asset => {
-    const record = records[asset.id];
-    if (record) {
-      if (!breakdown[asset.category]) {
-        breakdown[asset.category] = { invested: 0, current: 0 };
-      }
-      breakdown[asset.category].invested += record.invested;
-      breakdown[asset.category].current += record.current;
-    }
-  });
-
-  return breakdown;
+function clearAllData() {
+  state = { assets: [], records: {}, lastModified: Date.now() };
+  saveState();
 }
 
-/**
- * Get detailed asset comparisons between a month and the previous month
- */
-function getAssetPerformanceList(monthStr) {
-  const months = getMonths();
-  const index = months.indexOf(monthStr);
-  const currentRecords = state.records[monthStr] || {};
-  const prevMonthStr = index > 0 ? months[index - 1] : null;
-  const prevRecords = prevMonthStr ? (state.records[prevMonthStr] || {}) : {};
-
-  return state.assets.map(asset => {
-    const curr = currentRecords[asset.id];
-    const prev = prevRecords[asset.id];
-
-    if (!curr) return null; // Asset was not active or tracked this month
-
-    const gain = curr.current - curr.invested;
-    const gainPercent = curr.invested > 0 ? (gain / curr.invested) * 100 : 0;
-
-    let momChangeInvested = 0;
-    let momChangeCurrent = 0;
-
-    if (prev) {
-      momChangeInvested = curr.invested - prev.invested;
-      momChangeCurrent = curr.current - prev.current;
-    } else if (prevMonthStr) {
-      // Asset is new in the current month
-      momChangeInvested = curr.invested;
-      momChangeCurrent = curr.current;
-    }
-
-    return {
-      asset,
-      units: curr.units,
-      invested: curr.invested,
-      current: curr.current,
-      gain,
-      gainPercent,
-      momChangeInvested,
-      momChangeCurrent,
-      isNew: !prev && !!prevMonthStr
-    };
-  }).filter(Boolean);
+function resetToExcelData() {
+  state = getDefaultState();
+  saveState();
 }
 
-/**
- * Get trend analysis for charts
- */
-function getTrendData() {
-  const months = getMonths();
-  const trend = months.map(month => {
-    const metrics = getPortfolioMetrics(month);
-    const catBreakdown = getCategoryBreakdown(month);
-
-    const categoriesVal = {};
-    Object.keys(catBreakdown).forEach(cat => {
-      categoriesVal[cat] = catBreakdown[cat].current;
-    });
-
-    return {
-      month,
-      totalInvested: metrics.totalInvested,
-      totalCurrent: metrics.totalCurrent,
-      profit: metrics.absoluteGain,
-      categories: categoriesVal
-    };
-  });
-
-  return trend;
-}
-
-/**
- * Export state as JSON string
- */
 function exportData() {
   return JSON.stringify(state, null, 2);
 }
 
-/**
- * Import state from a JSON string with basic validation
- */
 function importData(jsonString) {
   try {
     const parsed = JSON.parse(jsonString);
-    if (parsed && Array.isArray(parsed.assets) && parsed.records && typeof parsed.records === 'object') {
+    if (parsed && parsed.assets && parsed.records) {
       state = parsed;
+      state.lastModified = Date.now();
       saveState();
       return true;
     }
+    return false;
   } catch (e) {
-    console.error("Failed to parse import data", e);
+    console.error("Import failed", e);
+    return false;
   }
-  return false;
 }
 
-/**
- * Reset state to preloaded Excel sheet data
- */
-function resetData() {
-  state = {
-    assets: [...DEFAULT_ASSETS],
-    records: JSON.parse(JSON.stringify(DEFAULT_RECORDS))
-  };
-  saveState();
-  return state;
-}
-
-// Expose state API globally
 window.portfolioState = {
   getCloudConfig,
-  saveCloudConfig,
   hasCloudConfig,
-  saveState,
+  loadLocalFallback,
   loadState,
+  saveState,
   getAssets,
+  getAssetsByCategory,
   addAsset,
   updateAsset,
   deleteAsset,
@@ -686,10 +561,8 @@ window.portfolioState = {
   cloneMonthRecords,
   deleteMonthRecords,
   getPortfolioMetrics,
-  getCategoryBreakdown,
-  getAssetPerformanceList,
-  getTrendData,
+  clearAllData,
+  resetToExcelData,
   exportData,
-  importData,
-  resetData
+  importData
 };

@@ -14,6 +14,7 @@ const CATEGORY_COLORS = {
   'EPF': '#f59e0b',           // Amber
   'PPF': '#06b6d4',           // Cyan
   'NPS': '#ec4899',           // Pink
+  'Gold Investment': '#fbbf24', // Yellow
   'Goals': '#f97316',         // Orange
   'Emergency Fund': '#64748b' // Slate
 };
@@ -40,10 +41,10 @@ function formatMonthLabel(monthStr) {
 }
 
 /**
- * Render or update the Net Worth Trend Chart (Line Chart)
+ * Render or update the Total Invested Trend Chart (Line Chart)
  */
-function renderNetWorthTrendChart(trendData) {
-  const ctx = document.getElementById('netWorthTrendChart');
+function renderInvestedTrendChart(trendData) {
+  const ctx = document.getElementById('investedTrendChart');
   if (!ctx) return;
 
   // Destroy previous instance to prevent rendering glitched overlay charts
@@ -53,7 +54,6 @@ function renderNetWorthTrendChart(trendData) {
 
   const labels = trendData.map(d => formatMonthLabel(d.month));
   const investedData = trendData.map(d => d.totalInvested);
-  const currentValData = trendData.map(d => d.totalCurrent);
 
   // Chart styling options
   const gridOptions = {
@@ -67,8 +67,8 @@ function renderNetWorthTrendChart(trendData) {
       labels: labels,
       datasets: [
         {
-          label: 'Total Net Worth',
-          data: currentValData,
+          label: 'Total Invested',
+          data: investedData,
           borderColor: '#6366f1', // primary color
           backgroundColor: (context) => {
             const chart = context.chart;
@@ -85,18 +85,6 @@ function renderNetWorthTrendChart(trendData) {
           pointBackgroundColor: '#6366f1',
           pointHoverRadius: 7,
           pointRadius: 4
-        },
-        {
-          label: 'Total Invested',
-          data: investedData,
-          borderColor: '#94a3b8', // secondary / slate-400
-          borderDash: [5, 5],
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          tension: 0.1,
-          pointBackgroundColor: '#94a3b8',
-          pointHoverRadius: 6,
-          pointRadius: 3
         }
       ]
     },
@@ -175,7 +163,7 @@ function renderAllocationChart(breakdownData) {
   }
 
   const categories = Object.keys(breakdownData);
-  const values = categories.map(cat => breakdownData[cat].current);
+  const values = categories.map(cat => breakdownData[cat].invested);
   const bgColors = categories.map(cat => CATEGORY_COLORS[cat] || '#64748b');
 
   // If there's no data, render an empty state doughnut
@@ -234,6 +222,6 @@ function renderAllocationChart(breakdownData) {
 
 // Expose charts API globally
 window.portfolioCharts = {
-  renderNetWorthTrendChart,
+  renderInvestedTrendChart,
   renderAllocationChart
 };
