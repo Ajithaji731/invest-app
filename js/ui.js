@@ -232,18 +232,19 @@ function renderDashboard() {
 
   const metrics = portfolioState.getPortfolioMetrics(selectedMonth);
 
-  // Net Worth KPI (Removed)
-  // elements.kpiNetWorth.textContent = formatCurrency(metrics.totalCurrent);
-
-  // Total Invested KPI
-  elements.kpiInvested.textContent = formatCurrency(metrics.totalInvested);
+  // Net Worth KPI
+  elements.kpiNetWorth.textContent = formatCurrency(metrics.totalInvested);
   if (metrics.mom && metrics.mom.change !== undefined) {
     const investedDiff = metrics.mom.change;
     const sign = investedDiff >= 0 ? '+' : '';
-    elements.kpiInvestedChange.innerHTML = `<span class="${investedDiff > 0 ? 'trend-up' : investedDiff < 0 ? 'trend-down' : 'trend-neutral'}">${sign}${formatCurrency(investedDiff)} additions</span>`;
+    elements.kpiNetWorthChange.innerHTML = `<span class="${investedDiff > 0 ? 'trend-up' : investedDiff < 0 ? 'trend-down' : 'trend-neutral'}">${sign}${formatCurrency(investedDiff)} additions</span>`;
   } else {
-    elements.kpiInvestedChange.innerHTML = `<span class="text-muted">First recorded month</span>`;
+    elements.kpiNetWorthChange.innerHTML = `<span class="text-muted">First recorded month</span>`;
   }
+
+  // Total Core Invested KPI
+  elements.kpiInvested.textContent = formatCurrency(metrics.totalCoreInvested);
+  // (Change footer is static "Excludes Emergency Fund & Goals")
 
   // MoM Return KPI
   if (metrics.mom && metrics.mom.change !== undefined) {

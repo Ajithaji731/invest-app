@@ -467,6 +467,7 @@ function getPortfolioMetrics(monthStr) {
   const currentRecords = state.records[monthStr] || {};
 
   let totalInvested = 0;
+  let totalCoreInvested = 0;
   let breakdown = {}; // by category
 
   Object.keys(currentRecords).forEach(assetId => {
@@ -476,6 +477,9 @@ function getPortfolioMetrics(monthStr) {
     const invested = currentRecords[assetId].invested || 0;
     
     totalInvested += invested;
+    if (asset.category !== 'Emergency Fund' && asset.category !== 'Goals') {
+      totalCoreInvested += invested;
+    }
 
     if (!breakdown[asset.category]) breakdown[asset.category] = { invested: 0 };
     breakdown[asset.category].invested += invested;
@@ -496,6 +500,7 @@ function getPortfolioMetrics(monthStr) {
 
   return {
     totalInvested,
+    totalCoreInvested,
     breakdown,
     mom: {
       change: momChange

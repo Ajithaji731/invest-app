@@ -90,18 +90,29 @@
           
           <div class="kpi-card" style="--card-accent: var(--primary);">
             <div class="kpi-header">
-              <span class="kpi-title">Total Invested Portfolio</span>
+              <span class="kpi-title">Total Net Worth</span>
+              <div class="kpi-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+            </div>
+            <div class="kpi-value" id="kpi-net-worth">₹0.00</div>
+            <div class="kpi-footer" id="kpi-net-worth-change">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="kpi-card" style="--card-accent: var(--warning);">
+            <div class="kpi-header">
+              <span class="kpi-title">Core Investments</span>
               <div class="kpi-icon"><i class="fa-solid fa-money-bill-trend-up"></i></div>
             </div>
             <div class="kpi-value" id="kpi-invested">₹0.00</div>
             <div class="kpi-footer" id="kpi-invested-change">
-              <!-- Populated dynamically -->
+              <span class="text-muted">Excludes Emergency Fund & Goals</span>
             </div>
           </div>
 
           <div class="kpi-card" style="--card-accent: var(--success);">
             <div class="kpi-header">
-              <span class="kpi-title">MoM Investment Growth</span>
+              <span class="kpi-title">MoM Net Worth Growth</span>
               <div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div>
             </div>
             <div class="kpi-value" id="kpi-mom-gain">₹0.00</div>
@@ -433,9 +444,9 @@
   </div>
 
   <!-- Main scripts -->
-  <script src="js/state.js?v=8"></script>
-  <script src="js/charts.js?v=8"></script>
-  <script src="js/ui.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/state.js?v=9"></script>
+  <script src="js/charts.js?v=9"></script>
+  <script src="js/ui.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>
