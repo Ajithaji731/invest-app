@@ -307,24 +307,15 @@ async function loadState() {
         try { localState = JSON.parse(localStateStr); } catch (e) {}
       }
 
-      if (localState && localState.lastModified && cloudState.lastModified) {
-        if (localState.lastModified > cloudState.lastModified) {
-          console.log("Local state is newer than cloud state. Skipping overwrite and syncing local to cloud.");
-          state = localState;
-          syncToCloud(); // Push local changes that were missed
-        } else {
-          state = cloudState;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-      } else if (!cloudState.lastModified) {
+      if (cloudState && cloudState.records && Object.keys(cloudState.records).length > 0) {
+        // Cloud has data, always trust cloud as the master source of truth across devices
+        state = cloudState;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } else {
         // Cloud is empty. Use local state if it exists, otherwise initialize default state and push to cloud.
         console.log("Cloud state is empty. Pushing data to cloud.");
         state = localState || getDefaultState();
         syncToCloud();
-      } else {
-        // No local timestamps or first time, trust cloud
-        state = cloudState;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       }
     } else {
       throw new Error(`Cloud fetch failed with status ${res.status}`);
