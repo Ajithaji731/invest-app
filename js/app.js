@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Perform background cloud sync
     portfolioState.loadState().then(() => {
       // Re-render UI just in case new data came from the cloud
+      if (portfolioUI && portfolioUI.updateMonthDropdowns) {
+        portfolioUI.updateMonthDropdowns();
+      }
       if (portfolioUI && portfolioUI.renderCurrentView) {
         portfolioUI.renderCurrentView();
       }

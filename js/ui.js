@@ -922,7 +922,7 @@ function initUI() {
 }
 
 function resetUIState() {
-  currentMonth = '';
+  selectedMonth = '';
 }
 
 // Expose UI API globally
@@ -931,5 +931,6 @@ window.portfolioUI = {
   switchView,
   formatCurrency,
   renderCurrentView,
-  resetUIState
+  resetUIState,
+  updateMonthDropdowns
 };
