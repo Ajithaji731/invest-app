@@ -38,9 +38,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       
       if (data && data.error === "Unauthorized") {
+        showLogin();
         loginError.textContent = "Invalid Secure ID.";
         loginError.classList.remove('hidden');
-        hideLoading();
+        setTimeout(() => loginError.classList.add('hidden'), 3000);
         return;
       }
       
