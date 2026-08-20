@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Authentication Flow
   if (currentUserId) {
-    showLoading();
     initializeApp();
   } else {
     showLogin();
@@ -107,24 +106,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     appScreen.classList.remove('hidden');
   }
 
-  function initializeApp() {
-    // Load local state instantly so the UI renders immediately
+  async function initializeApp() {
+    showLoading('Syncing with Cloud...', 'Loading your investment data');
+    
+    // Load local state instantly so the UI has a base if cloud is slow/fails
     portfolioState.loadLocalFallback();
     
-    // Render primary dashboard view
+    // Wait for cloud sync to finish so we have the absolute latest months
+    await portfolioState.loadState();
+    
+    // Now initialize the UI with the fully synced data
     portfolioUI.initUI();
     
+    // Hide loader and show app
     showApp();
-
-    // Perform background cloud sync
-    portfolioState.loadState().then(() => {
-      // Re-render UI just in case new data came from the cloud
-      if (portfolioUI && portfolioUI.updateMonthDropdowns) {
-        portfolioUI.updateMonthDropdowns();
-      }
-      if (portfolioUI && portfolioUI.renderCurrentView) {
-        portfolioUI.renderCurrentView();
-      }
-    });
   }
 });
