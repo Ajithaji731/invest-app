@@ -72,6 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Clear data so next login doesn't accidentally flash previous user's data
     portfolioState.clearAllData();
+    if (portfolioUI && portfolioUI.resetUIState) {
+      portfolioUI.resetUIState();
+    }
     
     showLogin();
     userIdInput.value = '';

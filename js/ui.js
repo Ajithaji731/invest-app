@@ -921,10 +921,15 @@ function initUI() {
   switchView('dashboard');
 }
 
+function resetUIState() {
+  currentMonth = '';
+}
+
 // Expose UI API globally
 window.portfolioUI = {
   initUI,
   switchView,
   formatCurrency,
-  renderCurrentView
+  renderCurrentView,
+  resetUIState
 };
