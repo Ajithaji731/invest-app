@@ -925,5 +925,6 @@ function initUI() {
 window.portfolioUI = {
   initUI,
   switchView,
-  formatCurrency
+  formatCurrency,
+  renderCurrentView
 };
