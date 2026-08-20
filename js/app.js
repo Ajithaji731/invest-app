@@ -38,15 +38,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       
       if (data && data.error === "Unauthorized") {
-        hideLoading();
-        showLogin();
-        loginError.textContent = 'Wrong ID. Please try again.';
+        loginError.textContent = "Invalid Secure ID.";
         loginError.classList.remove('hidden');
-        setTimeout(() => loginError.classList.add('hidden'), 3000);
+        hideLoading();
         return;
       }
       
-      // Success!
+      // Success! We already fetched the full cloud state, save it to local storage immediately
+      // to avoid Google Apps Script rate limiting on the subsequent loadState() call.
+      if (data && data.records) {
+        localStorage.setItem('portfolio_tracker_state', JSON.stringify(data));
+      }
+      
       currentUserId = id;
       localStorage.setItem('wealthflowUserId', currentUserId);
       localStorage.setItem('wealthflowLoginTime', Date.now().toString());
