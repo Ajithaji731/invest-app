@@ -5,20 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WealthFlow | Premium Portfolio Tracker & Investment Analytics</title>
   <meta name="description" content="Track and analyze your investments in stocks, mutual funds, EPF, PPF, and NPS. Compare month-on-month differences, gains, and asset allocations.">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
   <!-- Fonts & Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div id="cloudLoader" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(4px);">
+  <div id="cloudLoader" class="hidden" style="display: flex; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(4px);">
     <i class="fa-solid fa-cloud-arrow-down fa-bounce" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
-    <h3 style="font-family: var(--font-heading); margin: 0 0 8px 0;">Syncing with Cloud...</h3>
-    <p style="color: var(--text-secondary); margin: 0;">Loading your investment data from Google Apps Script</p>
+    <h3 id="loaderTitle" style="font-family: var(--font-heading); margin: 0 0 8px 0;">Syncing with Cloud...</h3>
+    <p id="loaderSubtitle" style="color: var(--text-secondary); margin: 0;">Loading your investment data</p>
   </div>
 
-  <div class="app-container">
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-card">
+      <div class="login-brand">
+        <i class="fa-solid fa-chart-line"></i>
+        <h1>WealthFlow</h1>
+      </div>
+      <p class="login-subtitle">Secure Access Required</p>
+      
+      <form id="loginForm" class="login-form">
+        <div class="input-group">
+          <label for="userIdInput">Access ID</label>
+          <input type="password" id="userIdInput" placeholder="Enter your secure ID" autocomplete="off" required>
+        </div>
+        <div id="loginError" class="login-error hidden">Wrong ID. Please try again.</div>
+        <button type="submit" class="btn btn-primary login-btn">
+          <span>Authenticate</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-container hidden" id="appScreen">
     
     <!-- Mobile Header -->
     <div class="mobile-header" id="mobileHeader">
@@ -55,7 +78,7 @@
 
       <div class="sidebar-footer">
         <p>WealthFlow Investments v2.0</p>
-        <p style="margin-top: 4px;">Cloud Sync Active</p>
+        <button id="logoutBtn" class="btn btn-danger" style="margin-top: 10px; width: 100%;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
       </div>
     </aside>
 
@@ -444,9 +467,9 @@
   </div>
 
   <!-- Main scripts -->
-  <script src="js/state.js?v=9"></script>
-  <script src="js/charts.js?v=9"></script>
-  <script src="js/ui.js?v=9"></script>
-  <script src="js/app.js?v=9"></script>
+  <script src="js/state.js?v=12"></script>
+  <script src="js/charts.js?v=12"></script>
+  <script src="js/ui.js?v=12"></script>
+  <script src="js/app.js?v=13"></script>
 </body>
 </html>

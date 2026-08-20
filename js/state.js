@@ -4,7 +4,18 @@
  */
 
 const STORAGE_KEY = 'portfolio_tracker_state';
-const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxC4m0vSxOtCL2T4bkgH2QVefsikJlsoyyFGfJHnniqF7HMFjFxFPYW0p1v2U-XLNI/exec';
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMTtjbg64KV2Y8PWdKE4zaqhKI7nFffQcH1g2_pSzKWy3-12e0YQZuzziD6LcoEEnZ/exec';
+
+let currentUserId = localStorage.getItem('wealthflowUserId') || null;
+const loginTimeStr = localStorage.getItem('wealthflowLoginTime');
+const loginTime = loginTimeStr ? parseInt(loginTimeStr, 10) : 0;
+
+// Session expiration: 10 minutes (600,000 ms)
+if (currentUserId && (Date.now() - loginTime > 600000)) {
+  currentUserId = null;
+  localStorage.removeItem('wealthflowUserId');
+  localStorage.removeItem('wealthflowLoginTime');
+}
 
 function getCloudConfig() {
   return {
@@ -214,8 +225,13 @@ async function syncToCloud() {
           resolve(false);
           return;
         }
+        if (!currentUserId) {
+          isSaving = false;
+          resolve(false);
+          return;
+        }
 
-        const res = await fetch(config.appScriptUrl, {
+        const res = await fetch(`${config.appScriptUrl}?userId=${currentUserId}`, {
           method: 'POST',
           mode: 'no-cors',
           headers: {
@@ -295,10 +311,17 @@ async function loadState() {
   }
 
   try {
+    if (!currentUserId) throw new Error("No user ID");
+    
     // Append timestamp to bypass aggressive browser caching of GET requests
-    const res = await fetch(config.appScriptUrl + '?t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(`${config.appScriptUrl}?userId=${currentUserId}&t=${Date.now()}`, { cache: 'no-store' });
     if (res.ok) {
       const cloudState = await res.json();
+      
+      if (cloudState && cloudState.error === "Unauthorized") {
+         document.getElementById('logoutBtn').click();
+         return;
+      }
       const localStateStr = localStorage.getItem(STORAGE_KEY);
       let localState = null;
       if (localStateStr) {
