@@ -585,6 +585,7 @@ window.portfolioState = {
   deleteMonthRecords,
   getPortfolioMetrics,
   clearAllData,
+  getDefaultState,
   resetToExcelData,
   exportData,
   importData

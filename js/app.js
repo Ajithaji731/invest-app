@@ -48,6 +48,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Success! We already fetched the full cloud state, save it to local storage immediately
       // to avoid Google Apps Script rate limiting on the subsequent loadState() call.
       if (data && data.records) {
+        if (!data.assets || !Array.isArray(data.assets) || data.assets.length === 0) {
+          const def = portfolioState.getDefaultState ? portfolioState.getDefaultState() : null;
+          data.assets = def ? def.assets : [];
+        }
         localStorage.setItem('portfolio_tracker_state', JSON.stringify(data));
       }
       
