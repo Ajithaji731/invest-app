@@ -4,7 +4,7 @@
  */
 
 const STORAGE_KEY = 'portfolio_tracker_state';
-const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4XE756GYGMLMzMVl3e0SKk_65iK4tRUdbu4XvaolBWTiV15V1IdmMqKtM7X6Mmtr6/exec';
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwggOUodVCdLua57K3DVVIdmn8J12uZWClM47tlWz3xzOrkkI_cc62EeHazaVhrsHqT/exec';
 
 let currentUserId = localStorage.getItem('wealthflowUserId') || null;
 const loginTimeStr = localStorage.getItem('wealthflowLoginTime');
