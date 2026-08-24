@@ -231,16 +231,20 @@ async function syncToCloud() {
           return;
         }
 
+        const payload = {
+          action: "sync",
+          userId: currentUserId,
+          state: state
+        };
+
         const res = await fetch(`${config.appScriptUrl}?userId=${currentUserId}`, {
           method: 'POST',
-          mode: 'no-cors',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'text/plain;charset=utf-8'
           },
-          body: JSON.stringify(state)
+          body: JSON.stringify(payload)
         });
         
-        // With no-cors mode, the response is opaque and res.ok is false with status 0
         resolve(true);
       } catch (e) {
         console.error("Failed to sync to cloud", e);
