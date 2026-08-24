@@ -4,7 +4,7 @@
  */
 
 const STORAGE_KEY = 'portfolio_tracker_state';
-const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMTtjbg64KV2Y8PWdKE4zaqhKI7nFffQcH1g2_pSzKWy3-12e0YQZuzziD6LcoEEnZ/exec';
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQOlfq4Dkroh35JjxKUrTrDsaNRVLE3YNmSsGoaufPlYt2yrXOSWxxex3g1HFhXcw3/exec';
 
 let currentUserId = localStorage.getItem('wealthflowUserId') || null;
 const loginTimeStr = localStorage.getItem('wealthflowLoginTime');
@@ -278,7 +278,9 @@ function getDefaultState() {
 function cleanRecords() {
   if (!state) state = getDefaultState();
   if (!state.records) state.records = {};
-  if (!state.assets) state.assets = [];
+  if (!state.assets || !Array.isArray(state.assets) || state.assets.length === 0) {
+    state.assets = [...DEFAULT_ASSETS];
+  }
 
   Object.keys(state.records).forEach(month => {
     const monthRecs = state.records[month];
@@ -331,11 +333,15 @@ async function loadState() {
       if (cloudState && cloudState.records && Object.keys(cloudState.records).length > 0) {
         // Cloud has data, always trust cloud as the master source of truth across devices
         state = cloudState;
+        if (!state.assets || !Array.isArray(state.assets) || state.assets.length === 0) {
+          state.assets = (localState && Array.isArray(localState.assets) && localState.assets.length > 0) ? localState.assets : [...DEFAULT_ASSETS];
+        }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } else {
         // Cloud is empty. Use local state if it exists, otherwise initialize default state and push to cloud.
         console.log("Cloud state is empty. Pushing data to cloud.");
         state = localState || getDefaultState();
+        if (!state.assets || state.assets.length === 0) state.assets = [...DEFAULT_ASSETS];
         syncToCloud();
       }
     } else {
