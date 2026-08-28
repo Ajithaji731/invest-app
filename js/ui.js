@@ -726,9 +726,29 @@ function setupEventListeners() {
     });
   });
 
-  elements.menuToggleBtn.addEventListener('click', () => {
-    elements.sidebar.classList.toggle('open');
-  });
+  const menuBtn = document.getElementById('menuToggleBtn') || elements.menuToggleBtn;
+  const sidebarEl = document.getElementById('sidebar') || elements.sidebar;
+  
+  if (menuBtn && sidebarEl) {
+    const toggleSidebar = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      sidebarEl.classList.toggle('open');
+    };
+    
+    menuBtn.onclick = toggleSidebar;
+    
+    // Auto-close sidebar on mobile when tapping outside
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && sidebarEl.classList.contains('open')) {
+        if (!sidebarEl.contains(e.target) && !menuBtn.contains(e.target)) {
+          sidebarEl.classList.remove('open');
+        }
+      }
+    });
+  }
 
   elements.globalMonthSelect.addEventListener('change', (e) => {
     selectedMonth = e.target.value;
