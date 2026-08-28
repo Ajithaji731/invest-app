@@ -90,7 +90,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  logoutBtn.addEventListener('click', () => {
+  const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+
+  function handleLogout(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     currentUserId = null;
     localStorage.removeItem('wealthflowUserId');
     localStorage.removeItem('wealthflowLoginTime');
@@ -103,7 +109,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLogin();
     userIdInput.value = "";
     startPrefetch("2108");
-  });
+  }
+
+  logoutBtn.addEventListener('click', handleLogout);
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener('click', handleLogout);
+    mobileLogoutBtn.addEventListener('touchend', handleLogout);
+  }
 
   function showLoading(title = 'Syncing with Cloud...', subtitle = 'Loading your investment data') {
     const loaderTitle = document.getElementById('loaderTitle');

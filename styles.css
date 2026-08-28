@@ -823,12 +823,44 @@ table.data-table td.actions {
   z-index: 150;
 }
 
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mobile-logout-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-logout-btn:active {
+  background: rgba(239, 68, 68, 0.25);
+  transform: scale(0.94);
+}
+
 .menu-toggle {
   background: transparent;
   border: none;
   color: var(--text-primary);
   font-size: 20px;
   cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Responsive adjustment for Mobile */
